@@ -194,7 +194,7 @@
   var L={
     ar:{
       dir:'rtl',title:'الشهر',mark:'أفق',
-      dg:'4 سبتمبر 2026',dh:'—— هجري',
+      dg:'4 سبتمبر 2026',dh:'22 ربيع الأول 1448 هـ',
       hl:'المتاح الآن',acct:'جاري <b class="ltr">•••• 7742</b>',
       hs:['من إجمالي ',' في الشهر'],
       s:['مصروف','متاح','موعود'],
@@ -218,7 +218,7 @@
     },
     en:{
       dir:'ltr',title:'Month',mark:'Ufuq',
-      dg:'4 September 2026',dh:'—— Hijri',
+      dg:'4 September 2026',dh:'22 Rabi I 1448 AH',
       hl:'Available now',acct:'Current <b class="ltr">•••• 7742</b>',
       hs:['of ',' this month'],
       s:['Spent','Available','Promised'],
@@ -301,7 +301,7 @@
     /* the key travels, the person's data does not: no name or number in the URL */
     [].slice.call(document.querySelectorAll('#send .r')).forEach(function(b){
       b.onclick=function(){
-        location.href='Ufuq%20Transfer.html?r='+encodeURIComponent(b.dataset.r)+'&lang='+lang;
+        location.href='transfer.html?r='+encodeURIComponent(b.dataset.r)+'&lang='+lang;
       };
     });
 
