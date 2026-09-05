@@ -12,7 +12,7 @@
   /* --avail alternates: olive #4C5622 · oxblood #6E2438 */
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%}
-  body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased;background:#E8E6E1;display:flex;align-items:center;justify-content:center;gap:22px;flex-direction:column;overflow:hidden}
+  body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased;background:#E8E6E1;display:flex;align-items:center;justify-content:center;justify-content:safe center;gap:22px;flex-direction:column;overflow:auto}
   button{font-family:inherit;letter-spacing:0;cursor:pointer}
   .num{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum" 1,"lnum" 1}
   .ltr{direction:ltr;unicode-bidi:isolate}
@@ -21,7 +21,7 @@
   .cap-b{font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#78807F}
 
   /* frame */
-  .frame{width:390px;height:844px;border-radius:54px;background:var(--paper);color:var(--ink);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 11px #0d0f11,0 0 0 12.5px #2b2f31,0 40px 80px rgba(30,34,40,.30)}
+  .frame{width:390px;height:844px;flex-shrink:0;border-radius:54px;background:var(--paper);color:var(--ink);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 11px #0d0f11,0 0 0 12.5px #2b2f31,0 40px 80px rgba(30,34,40,.30)}
   .frame[dir=ltr]{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif}
   .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:33px;border-radius:20px;background:#0b0d0e;z-index:30}
   .status{display:flex;align-items:center;justify-content:space-between;padding:15px 28px 0;flex-shrink:0;height:44px}
@@ -115,6 +115,18 @@
   .lang button{border:none;background:none;padding:5px 11px;font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;font-weight:600;color:#767E7D;transition:background .14s ease,color .14s ease}
   .lang button+button{border-left:1px solid #CFCAC2}
   .lang button.on{background:var(--ink);color:#fff}
+
+  /* narrow screens: the frame stops being a mockup and becomes the app.
+     Full bleed, natural page scroll, and the flexible box keeps its content
+     height instead of collapsing — the frame grows, the content never spills. */
+  @media (max-width:480px){
+    body{display:block;gap:0;padding:0;background:var(--paper);overflow:auto}
+    .frame{width:100%;height:auto;min-height:100vh;min-height:100dvh;border-radius:0;box-shadow:none}
+    .island,.home,.cap{display:none}
+    .status{padding-top:8px}
+    .listwrap{flex:1 0 auto;min-height:0;overflow:visible}
+    .lang{display:flex;justify-content:center;align-items:center;gap:6px;padding:9px 6px;background:var(--paper);border-top:1px solid var(--line);border-radius:0;border-inline:none}
+  }
 </style>
 </head>
 <body>
