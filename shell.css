@@ -64,14 +64,15 @@ body{
 /* The actions ride along the bottom of that scroll region, so a screen that
    has to scroll inside a shortened frame never puts its primary action out of
    reach. They sit on paper, and the content passes under a short fade. */
-/* --pad-b mirrors the pages' own .body padding-bottom. Sticky pins to the
+/* Only the transfer's actions are pinned: those complete a step and must be
+   there while the step is on screen. The Month screen is a list — its button
+   sits at the end of that list and is reached by scrolling to it, the way any
+   phone screen behaves, rather than covering the quick-send row.
+
+   --pad-b mirrors the pages' own .body padding-bottom. Sticky pins to the
    content box, so without claiming that last strip the content would go on
    showing through underneath the footer. */
 .body{--pad-b:10px}
-   Only the transfer's actions are pinned: those complete a step and must be
-   there when the step is on screen. The Month screen is a list — its button
-   sits at the end of the list and is reached by scrolling to it, the way any
-   phone screen behaves, rather than covering the quick-send row. */
 .zone-act{position:sticky;bottom:calc(-1 * var(--pad-b));z-index:6;flex-shrink:0;display:flex;flex-direction:column;background:var(--paper);padding-bottom:var(--pad-b)}
 .zone-act::before{content:'';position:absolute;inset-inline:0;top:-16px;height:16px;background:linear-gradient(to top,var(--paper),rgba(247,245,241,0));pointer-events:none}
 
