@@ -7,22 +7,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="shell.css" />
 <style>
   :root{--paper:#F7F5F1;--ink:#14181A;--muted:#6E7679;--avail:#0B4F55;--line:#E2DED7;--clay:#9C4A2F;--spent:#D8D5CF;--promised:#EFEBE4}
   /* --avail alternates: olive #4C5622 · oxblood #6E2438 */
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
-  body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased;background:#E8E6E1;display:flex;align-items:center;justify-content:center;justify-content:safe center;gap:22px;flex-direction:column;overflow:auto}
+  body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased}
   button{font-family:inherit;letter-spacing:0;cursor:pointer}
   .num{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum" 1,"lnum" 1}
   .ltr{direction:ltr;unicode-bidi:isolate}
-  .cap{display:flex;flex-direction:column;align-items:center;gap:4px}
-  .cap-a{font-size:19px;font-weight:600;color:var(--ink);font-family:'IBM Plex Sans',sans-serif}
-  .cap-b{font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#78807F}
 
-  /* frame */
-  .frame{width:390px;height:844px;flex-shrink:0;border-radius:54px;background:var(--paper);color:var(--ink);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 11px #0d0f11,0 0 0 12.5px #2b2f31,0 40px 80px rgba(30,34,40,.30)}
-  .frame[dir=ltr]{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif}
+  /* the phone frame, its caption and the language switcher live in shell.css,
+     shared with the transfer screen so both compose and scroll alike */
   .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:33px;border-radius:20px;background:#0b0d0e;z-index:30}
   .status{display:flex;align-items:center;justify-content:space-between;padding:15px 28px 0;flex-shrink:0;height:44px}
   .status .t{font-family:'IBM Plex Sans',sans-serif;font-size:15.5px;font-weight:600;font-variant-numeric:tabular-nums}
@@ -49,23 +45,29 @@
   .hero-amt .c{font-size:18px;font-weight:500;color:var(--muted)}
   .hero-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
 
-  /* horizon */
-  .horizon{margin-top:9px;position:relative}
-  .flagrow{display:flex;min-height:34px}
-  .flagcell{width:15.5556%;position:relative}
-  .flag{position:absolute;inset-inline-start:100%;bottom:0;white-space:nowrap;padding-inline-start:8px;border-inline-start:2px solid var(--ink);display:flex;flex-direction:column;gap:1px;align-items:flex-start}
-  .flag b{font-size:12px;font-weight:600}
-  .flag em{font-family:'IBM Plex Sans',sans-serif;font-style:normal;font-size:11px;color:var(--muted)}
+  /* horizon — a money bar. Widths are shares of the month's money and nothing
+     else; the seam is the edge of what has already gone, not a date. */
+  .horizon{margin-top:16px;position:relative}
   .bar{display:flex;height:64px;border-radius:9px;overflow:hidden;position:relative;border:1px solid var(--line)}
-  .seg{display:flex;flex-direction:column;justify-content:space-between;padding:8px 10px;position:relative;transition:filter .16s ease;cursor:pointer}
-  .seg .w{font-size:11.5px;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:5px}
-  .seg .a{font-size:13px;font-weight:600;white-space:nowrap}
-  .s-spent{width:15.5556%;background:var(--spent);color:rgba(20,24,26,.62)}
+  /* no inline padding and no automatic minimum on the segment itself, so its
+     box is exactly its share: 0 SAR is 0 px, and the row never overflows and
+     shrinks the slices away from their true proportions */
+  .seg{display:flex;flex-direction:column;justify-content:space-between;padding:8px 0;min-width:0;overflow:hidden;position:relative;transition:filter .16s ease;cursor:pointer}
+  .seg .w{font-size:11.5px;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:5px;padding-inline:10px}
+  .seg .a{font-size:13px;font-weight:600;white-space:nowrap;padding-inline:10px}
+  /* narrow but not blind: the label goes, the sum stays */
+  .seg.mute .w,.seg.mute .a{display:none}
+  .seg.amt-only .w{display:none}
+  .seg.amt-only{justify-content:flex-end}
+  .s-spent{background:var(--spent);color:rgba(20,24,26,.62)}
+  /* the narrowest slice by construction, and flush against the bar's rounded
+     end — a tighter inset keeps its sum readable instead of blank */
+  .s-spent .w,.s-spent .a{padding-inline:4px}
   .s-spent .a{font-size:12px}
-  .s-free{width:60%;background:var(--avail);color:#fff}
+  .s-free{background:var(--avail);color:#fff}
   .s-free .w{color:rgba(255,255,255,.82)}
   .s-free .a{font-size:16px;font-weight:600}
-  .s-prom{width:24.4444%;background:var(--promised);color:rgba(20,24,26,.72);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
+  .s-prom{background:var(--promised);color:rgba(20,24,26,.72);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
   .seam{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);z-index:4}
   .seg.dim{filter:saturate(.55) opacity(.5)}
   .caret{width:9px;height:9px;flex-shrink:0;opacity:.65}
@@ -110,22 +112,9 @@
   .tab.on{color:var(--ink);font-weight:600}
   .tab.on .rule{background:var(--ink)}
 
-  /* lang toggle — outside the frame, never in a screen capture */
-  .lang{display:flex;border:1px solid #CFCAC2;border-radius:8px;overflow:hidden;direction:ltr;background:#F1EFEA}
-  .lang button{border:none;background:none;padding:5px 11px;font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;font-weight:600;color:#767E7D;transition:background .14s ease,color .14s ease}
-  .lang button+button{border-left:1px solid #CFCAC2}
-  .lang button.on{background:var(--ink);color:#fff}
-
-  /* narrow screens: the frame stops being a mockup and becomes the app.
-     Full bleed, natural page scroll, and the flexible box keeps its content
-     height instead of collapsing — the frame grows, the content never spills. */
   @media (max-width:480px){
-    body{display:block;gap:0;padding:0;background:var(--paper);overflow:auto}
-    .frame{width:100%;height:auto;min-height:100vh;min-height:100dvh;border-radius:0;box-shadow:none}
-    .island,.home,.cap{display:none}
     .status{padding-top:8px}
     .listwrap{flex:1 0 auto;min-height:0;overflow:visible}
-    .lang{display:flex;justify-content:center;align-items:center;gap:6px;padding:9px 6px;background:var(--paper);border-top:1px solid var(--line);border-radius:0;border-inline:none}
   }
 </style>
 </head>
@@ -149,28 +138,24 @@
           <div class="hero-l" id="t-hl"></div>
           <div class="acct" id="t-acct"></div>
         </div>
-        <div class="hero-amt ltr"><span class="v num">5 400</span><span class="c">SAR</span></div>
+        <div class="hero-amt ltr"><span class="v num" id="t-hv"></span><span class="c">SAR</span></div>
         <div class="hero-sub" id="t-hs"></div>
       </div>
 
       <div class="horizon">
-        <div class="flagrow" id="flagrow">
-          <div class="flagcell">
-            <div class="flag"><b id="t-today"></b><em class="num" id="t-todayd"></em></div>
-          </div>
-        </div>
         <div class="bar" id="bar">
-          <div class="seg s-spent" data-k="spent">
+          <div class="seg s-spent" id="g-spent" data-k="spent">
             <span class="w"><span id="t-s1"></span><svg class="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.2 5 7l4-3.8"></path></svg></span>
-            <span class="a num ltr">1 400</span>
+            <span class="a num ltr" id="v-spent"></span>
           </div>
-          <div class="seg s-free" data-k="free"><span class="w" id="t-s2"></span><span class="a num ltr">60%</span></div>
-          <div class="seg s-prom" data-k="prom"><span class="w" id="t-s3"></span><span class="a num ltr">2 200</span></div>
+          <div class="seg s-free" id="g-free" data-k="free"><span class="w" id="t-s2"></span><span class="a num ltr" id="v-free"></span></div>
+          <div class="seg s-prom" id="g-prom" data-k="prom"><span class="w" id="t-s3"></span><span class="a num ltr" id="v-prom"></span></div>
           <div class="seam" id="seam"></div>
         </div>
+        <!-- the ends of the axis are money, so the bar states its own unit -->
         <div class="scale">
-          <span class="num" id="t-m1"></span>
-          <span class="num" id="t-m2"></span>
+          <span class="num ltr" id="t-ax0"></span>
+          <span class="num ltr" id="t-ax1"></span>
         </div>
         <div class="note" id="note"></div>
       </div>
@@ -197,57 +182,57 @@
     <span class="cap-a" id="cap-a"></span>
     <span class="cap-b" id="cap-b"></span>
   </div>
-  <div class="lang">
-    <button data-l="ar" class="on">ar</button>
-    <button data-l="en">en</button>
+  <div class="ctl">
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-l="ar">AR</button>
+      <button type="button" data-l="en">EN</button>
+    </div>
   </div>
 
+<script src="model.js"></script>
 <script>
+  /* every sum and every share comes from MONTH; the dictionaries below carry
+     wording only, so the two screens cannot disagree about the money */
+  var SH={spent:pct(MONTH.spent).toFixed(0),free:pct(MONTH.free).toFixed(0),prom:pct(MONTH.promised).toFixed(0)};
+  function n(v){return '<span class="num ltr">'+v+'</span>'}
+
   var L={
     ar:{
       dir:'rtl',title:'الشهر',mark:'أفق',
-      dg:'4 سبتمبر 2026',dh:'22 ربيع الأول 1448 هـ',
-      hl:'المتاح الآن',acct:'جاري <b class="ltr">•••• 7742</b>',
-      hs:['من إجمالي ',' في الشهر'],
+      hl:'المتاح الآن',acct:'جاري <b class="ltr">'+MONTH.account+'</b>',
+      hs:['من ',' لهذا الشهر'],
       s:['مصروف','متاح','موعود'],
-      today:'اليوم',todayd:'4 سبتمبر',
-      m1:'1 سبتمبر',m2:'30 سبتمبر',
-      note:'الحد بين <b>مصروف</b> و<b>متاح</b> هو اليوم. الموعود على الحساب، لكنه ليس لك.',
+      note:'الشريط يقسم مال الشهر — '+n(money(MONTH.total))+': رصيد أول الشهر والوارد. الطول مبلغ، لا وقت.',
       drill:{
-        spent:'<b>مصروف</b> — <span class="num ltr">1 400 SAR</span> · 16% من الشهر. خلف اليوم، انتهى.',
-        free:'<b>متاح</b> — <span class="num ltr">5 400 SAR</span> · 60% من الشهر. هذا وحده لك الآن.',
-        prom:'<b>موعود</b> — <span class="num ltr">2 200 SAR</span> · 24% من الشهر. على الحساب، لكنه محسوب لغيرك.'
+        spent:'<b>مصروف</b> — '+n(money(MONTH.spent))+' · '+SH.spent+'% من مال الشهر. خرج من الحساب.',
+        free:'<b>متاح</b> — '+n(money(MONTH.free))+' · '+SH.free+'% من مال الشهر. هذا وحده لك الآن.',
+        prom:'<b>موعود</b> — '+n(money(MONTH.promised))+' · '+SH.prom+'% من مال الشهر. على الحساب، لكنه محسوب لغيرك. المواعيد في القائمة أدناه.'
       },
-      obt:'التزامات قادمة',obtotal:'2 200 SAR',
-      obs:[['قسط السيارة','8 سبتمبر','بعد 4 أيام','850'],['تأمين طبي','15 سبتمبر','','620'],['رسوم المدرسة','22 سبتمبر','','480'],['اشتراكات','28 سبتمبر','','250']],
-      spentT:'ما صُرف حتى الآن',spentTotal:'1 400 SAR',
-      spentList:[['نقل','4 سبتمبر','250'],['مطعم','3 سبتمبر','180'],['وقود','3 سبتمبر','145'],['بقالة','2 سبتمبر','320'],['كهرباء','1 سبتمبر','410'],['صيدلية','1 سبتمبر','95']],
+      obt:'التزامات قادمة',
+      obs:[['قسط السيارة','8 سبتمبر','بعد 4 أيام'],['تأمين طبي','15 سبتمبر',''],['رسوم المدرسة','22 سبتمبر',''],['اشتراكات','28 سبتمبر','']],
+      spentT:'ما صُرف حتى الآن',
+      spentList:[['نقل','4 سبتمبر'],['مطعم','3 سبتمبر'],['وقود','3 سبتمبر'],['بقالة','2 سبتمبر'],['كهرباء','1 سبتمبر'],['صيدلية','1 سبتمبر']],
       qst:'إرسال سريع',
-      send:[['ع','عبدالله','abdullah'],['ن','نورة','noura'],['ف','فيصل','faisal']],
       act:'تحويل برقم الجوال',
       tabs:['الشهر','التحويلات','الحساب'],
       capA:'أفق — الشهر',capB:'iPhone 390×844 · RTL · light'
     },
     en:{
       dir:'ltr',title:'Month',mark:'Ufuq',
-      dg:'4 September 2026',dh:'22 Rabi I 1448 AH',
-      hl:'Available now',acct:'Current <b class="ltr">•••• 7742</b>',
-      hs:['of ',' this month'],
+      hl:'Available now',acct:'Current <b class="ltr">'+MONTH.account+'</b>',
+      hs:['of ',' for this month'],
       s:['Spent','Available','Promised'],
-      today:'Today',todayd:'4 September',
-      m1:'1 September',m2:'30 September',
-      note:'The line between <b>Spent</b> and <b>Available</b> is today. Promised sits in the account, but it isn\'t yours.',
+      note:'The bar splits the month\'s money — '+n(money(MONTH.total))+': opening balance plus what came in. Length is an amount, not time.',
       drill:{
-        spent:'<b>Spent</b> — <span class="num ltr">1 400 SAR</span> · 16% of the month. Behind today, done.',
-        free:'<b>Available</b> — <span class="num ltr">5 400 SAR</span> · 60% of the month. This alone is yours now.',
-        prom:'<b>Promised</b> — <span class="num ltr">2 200 SAR</span> · 24% of the month. In the account, spoken for.'
+        spent:'<b>Spent</b> — '+n(money(MONTH.spent))+' · '+SH.spent+'% of the month\'s money. Already out of the account.',
+        free:'<b>Available</b> — '+n(money(MONTH.free))+' · '+SH.free+'% of the month\'s money. This alone is yours now.',
+        prom:'<b>Promised</b> — '+n(money(MONTH.promised))+' · '+SH.prom+'% of the month\'s money. In the account, spoken for. Due dates are in the list below.'
       },
-      obt:'Upcoming commitments',obtotal:'2 200 SAR',
-      obs:[['Car instalment','8 September','in 4 days','850'],['Health insurance','15 September','','620'],['School fees','22 September','','480'],['Subscriptions','28 September','','250']],
-      spentT:'Spent so far',spentTotal:'1 400 SAR',
-      spentList:[['Transport','4 September','250'],['Dining','3 September','180'],['Fuel','3 September','145'],['Groceries','2 September','320'],['Electricity','1 September','410'],['Pharmacy','1 September','95']],
+      obt:'Upcoming commitments',
+      obs:[['Car instalment','8 September','in 4 days'],['Health insurance','15 September',''],['School fees','22 September',''],['Subscriptions','28 September','']],
+      spentT:'Spent so far',
+      spentList:[['Transport','4 September'],['Dining','3 September'],['Fuel','3 September'],['Groceries','2 September'],['Electricity','1 September'],['Pharmacy','1 September']],
       qst:'Quick send',
-      send:[['A','Abdullah','abdullah'],['N','Noura','noura'],['F','Faisal','faisal']],
       act:'Transfer by phone number',
       tabs:['Month','Transfers','Account'],
       capA:'Ufuq — Month',capB:'iPhone 390×844 · LTR · light'
@@ -261,28 +246,64 @@
       : '<svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="#14181A" stroke-opacity=".35" fill="none"></rect><rect x="2" y="2" width="15" height="8" rx="1.8" fill="#14181A"></rect><path d="M23 4v4c.7-.3 1.2-1 1.2-2S23.7 4.3 23 4Z" fill="#14181A" fill-opacity=".45"></path></svg>';
   }
 
-  var cur=null,lang='ar';
+  /* The language travels in the URL so it survives a transfer and the way
+     back, and ?debug=1 travels with it so a demo session stays in demo mode.
+     Nothing else is ever put in the address bar. */
+  var QP=new URLSearchParams(location.search);
+  var DEBUG=QP.get('debug')==='1';
+  var cur=null,lang=(QP.get('lang')==='en')?'en':'ar';
+  function trail(){return '&lang='+lang+(DEBUG?'&debug=1':'')}
+
   function set(id,v){document.getElementById(id).textContent=v}
   function html(id,v){document.getElementById(id).innerHTML=v}
 
+  /* the label comes from the dictionary, the sum from MONTH, paired by index */
   function commitments(){
     var d=L[lang];
-    set('t-obt',d.obt);set('t-obtotal',d.obtotal);
-    document.getElementById('obs').innerHTML=d.obs.map(function(o){
+    set('t-obt',d.obt);set('t-obtotal',money(MONTH.promised));
+    document.getElementById('obs').innerHTML=d.obs.map(function(o,i){
       return '<div class="ob"><span class="hatch"></span><div><div class="ob-n">'+o[0]+'</div>'+
         '<div class="ob-d"><span>'+o[1]+'</span>'+(o[2]?' · <span class="soon">'+o[2]+'</span>':'')+'</div></div>'+
-        '<span class="ob-a num ltr">'+o[3]+'</span></div>';
+        '<span class="ob-a num ltr">'+grp(MONTH.commitments[i])+'</span></div>';
     }).join('');
   }
   function spentHistory(){
     var d=L[lang];
-    set('t-obt',d.spentT);set('t-obtotal',d.spentTotal);
-    document.getElementById('obs').innerHTML=d.spentList.map(function(o){
+    set('t-obt',d.spentT);set('t-obtotal',money(MONTH.spent));
+    document.getElementById('obs').innerHTML=d.spentList.map(function(o,i){
       return '<div class="ob"><span class="solid"></span><div><div class="ob-n">'+o[0]+'</div>'+
         '<div class="ob-d">'+o[1]+'</div></div>'+
-        '<span class="ob-a past num ltr">'+o[2]+'</span></div>';
+        '<span class="ob-a past num ltr">'+grp(MONTH.spends[i])+'</span></div>';
     }).join('');
   }
+
+  /* Widths are shares of MONTH.total, so they always add to the whole bar and
+     a slice worth nothing occupies nothing. The seam sits on the spent/available
+     edge — the same boundary the segments already draw, stated once more in ink. */
+  function drawBar(){
+    var rtl=L[lang].dir==='rtl',w=pct(MONTH.spent);
+    document.getElementById('g-spent').style.width=w+'%';
+    document.getElementById('g-free').style.width=pct(MONTH.free)+'%';
+    document.getElementById('g-prom').style.width=pct(MONTH.promised)+'%';
+    var seam=document.getElementById('seam');
+    seam.style.right=rtl?w+'%':'auto';
+    seam.style.left=rtl?'auto':w+'%';
+    set('v-spent',grp(MONTH.spent));
+    set('v-free',SH.free+'%');
+    set('v-prom',grp(MONTH.promised));
+    fitLabels();
+  }
+
+  /* a label is shown only where it physically fits; the width it was measured
+     against never changes because of the answer */
+  function fitLabels(){
+    var bw=document.getElementById('bar').clientWidth;
+    if(!bw)return;
+    segApply(document.getElementById('g-spent'),pct(MONTH.spent)/100*bw,true);
+    segApply(document.getElementById('g-free'),pct(MONTH.free)/100*bw,true);
+    segApply(document.getElementById('g-prom'),pct(MONTH.promised)/100*bw,true);
+  }
+  window.addEventListener('resize',fitLabels);
 
   function render(k){
     lang=k;var d=L[k],rtl=d.dir==='rtl';
@@ -294,26 +315,26 @@
       '<span class="t">9:41</span><div class="ic">'+ICONS+battery(rtl)+'</div>';
 
     set('t-title',d.title);set('t-mark',d.mark);
-    set('t-dg',d.dg);set('t-dh',d.dh);
+    /* the dates stay here, in the header, where a date is read as a date */
+    set('t-dg',MONTH.day[k].g);set('t-dh',MONTH.day[k].h);
     set('t-hl',d.hl);html('t-acct',d.acct);
-    html('t-hs',d.hs[0]+'<span class="num ltr">9 000 SAR</span>'+d.hs[1]);
+    set('t-hv',grp(MONTH.free));
+    html('t-hs',d.hs[0]+n(money(MONTH.total))+d.hs[1]);
     set('t-s1',d.s[0]);set('t-s2',d.s[1]);set('t-s3',d.s[2]);
-    set('t-today',d.today);set('t-todayd',d.todayd);
-    set('t-m1',d.m1);set('t-m2',d.m2);
+    set('t-ax0','0');set('t-ax1',money(MONTH.total));
     set('t-qst',d.qst);set('t-act',d.act);
     set('cap-a',d.capA);set('cap-b',d.capB);
 
-    var seam=document.getElementById('seam');
-    seam.style.right=rtl?'15.5556%':'auto';
-    seam.style.left=rtl?'auto':'15.5556%';
+    drawBar();
 
-    document.getElementById('send').innerHTML=d.send.map(function(s){
-      return '<button class="r" data-r="'+s[2]+'"><span class="mono">'+s[0]+'</span><span class="n">'+s[1]+'</span></button>';
+    document.getElementById('send').innerHTML=MONTH.order.map(function(key){
+      var p=MONTH.people[key];
+      return '<button class="r" data-r="'+key+'"><span class="mono">'+p.ini[k]+'</span><span class="n">'+p[k]+'</span></button>';
     }).join('');
     /* the key travels, the person's data does not: no name or number in the URL */
     [].slice.call(document.querySelectorAll('#send .r')).forEach(function(b){
       b.onclick=function(){
-        location.href='transfer.html?r='+encodeURIComponent(b.dataset.r)+'&lang='+lang;
+        location.href='transfer.html?r='+encodeURIComponent(b.dataset.r)+trail();
       };
     });
 
@@ -350,10 +371,18 @@
       document.querySelectorAll('.lang button').forEach(function(x){x.classList.remove('on')});
       b.classList.add('on');
       render(b.dataset.l);
+      /* keep the address bar in step, so a reload or a shared link opens in
+         the language that is on screen */
+      QP.set('lang',lang);
+      history.replaceState(null,'','?'+QP.toString());
     });
   });
 
-  render('ar');
+  /* the arriving language also sets the toggle, so the control matches the screen */
+  [].slice.call(document.querySelectorAll('.lang button')).forEach(function(b){
+    b.classList.toggle('on',b.dataset.l===lang);
+  });
+  render(lang);
 </script>
 </body>
 </html>

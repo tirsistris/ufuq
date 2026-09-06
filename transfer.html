@@ -7,17 +7,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="shell.css" />
 <style>
   :root{--paper:#F7F5F1;--ink:#14181A;--muted:#6E7679;--avail:#0B4F55;--line:#E2DED7;--clay:#9C4A2F;--spent:#D8D5CF;--promised:#EFEBE4}
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
-  body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased;background:#E8E6E1;display:flex;align-items:center;justify-content:center;justify-content:safe center;gap:20px;flex-direction:column;overflow:auto}
+  body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased}
   button{font-family:inherit;letter-spacing:0;cursor:pointer}
   .num{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum" 1,"lnum" 1}
   .ltr{direction:ltr;unicode-bidi:isolate}
 
-  .frame{width:390px;height:844px;flex-shrink:0;border-radius:54px;background:var(--paper);color:var(--ink);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 11px #0d0f11,0 0 0 12.5px #2b2f31,0 40px 80px rgba(30,34,40,.30)}
-  .frame[dir=ltr]{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif}
+  /* the phone frame, its caption and the language switcher live in shell.css,
+     shared with the month screen so both compose and scroll alike */
   .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:33px;border-radius:20px;background:#0b0d0e;z-index:30}
   .status{display:flex;align-items:center;justify-content:space-between;padding:15px 28px 0;flex-shrink:0;height:44px}
   .status .t{font-family:'IBM Plex Sans',sans-serif;font-size:15.5px;font-weight:600;font-variant-numeric:tabular-nums}
@@ -42,45 +42,39 @@
   .hero-amt .c{font-size:20px;font-weight:500;color:var(--muted)}
   .hero-sub{font-size:15px;color:var(--muted);margin-top:4px;min-height:17px}
 
-  /* horizon */
-  .horizon{margin-top:9px;position:relative}
-  .flagrow{display:flex;min-height:34px;position:relative;z-index:2}
-  .flagcell{width:15.5556%;position:relative;transition:width .42s cubic-bezier(.22,.61,.36,1)}
-  .flag{position:absolute;inset-inline-start:100%;bottom:0;white-space:nowrap;padding-inline-start:8px;padding-bottom:5px;display:flex;flex-direction:column;gap:0;align-items:flex-start}
-  /* position mark: a 3px dot straddling the bar's top edge with a 6px hairline
-     tether up to the label — points at an instant, does not measure an extent.
-     Both are absolute, so the flag row's reserved 34px is unchanged. */
-  .flag::before{content:'';position:absolute;inset-inline-start:1.3px;bottom:2px;width:1px;height:4px;background:var(--ink)}
-  .flag::after{content:'';position:absolute;inset-inline-start:0.3px;bottom:-1.5px;width:3px;height:3px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1.5px var(--paper)}
-  .flag b{font-size:13px;font-weight:600}
-  .flag em{font-family:'IBM Plex Sans',sans-serif;font-style:normal;font-size:12px;color:var(--muted)}
+  /* horizon — a money bar. Widths are shares of the month's money and nothing
+     else; the seam is the edge of what has already gone, not a date. */
+  .horizon{margin-top:16px;position:relative}
   .bar{display:flex;height:64px;border-radius:9px;overflow:hidden;position:relative;border:1px solid var(--line)}
-  .seg{display:flex;flex-direction:column;justify-content:space-between;padding:8px 10px;position:relative;overflow:hidden;transition:width .42s cubic-bezier(.22,.61,.36,1),background-color .42s ease}
-  .seg .w{font-size:13px;font-weight:500;white-space:nowrap}
-  .seg .a{font-size:13px;font-weight:600;white-space:nowrap}
-  .s-spent{background:var(--spent);color:rgba(20,24,26,.62);padding-inline:6px}
-  .s-spent .a{font-size:13px}
-  /* the wedge never shrinks below 12px: under ~1 000 SAR the true share of the
-     month is thinner than a hairline, so the floor keeps the mechanic visible.
-     Below the floor the width is a minimum, not a proportion. */
-  .s-wedge{background:var(--promised);color:rgba(20,24,26,.74);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px);padding:8px 6px;min-width:12px;flex-shrink:0}
-  .s-wedge.merged{background:var(--spent);background-image:none;min-width:0;padding-inline:0}
-  /* the floor is a floor for a real slice only; at zero it must release,
-     or a sliver survives the rollback and steals width from Available */
-  .s-wedge.gone{min-width:0;padding-inline:0}
+  /* No inline padding and no automatic minimum on the segment itself — the
+     inline padding sits on the labels instead. A segment's box is therefore
+     exactly its share of the month: 0 SAR is 0 px rather than a strip of
+     background, and because nothing can push a slice past its money the row
+     never overflows, so the seam lands on the real edge instead of near it. */
+  .seg{display:flex;flex-direction:column;justify-content:space-between;padding:8px 0;min-width:0;position:relative;overflow:hidden;transition:width .42s cubic-bezier(.22,.61,.36,1),background-color .42s ease}
+  /* the label's line box is normalised to the sum's, so the gap between them
+     does not depend on the script's natural leading */
+  .seg .w{font-size:13px;font-weight:500;white-space:nowrap;line-height:16.7px;padding-inline:10px}
+  .seg .a{font-size:13px;font-weight:600;white-space:nowrap;padding-inline:10px}
+  .s-spent{background:var(--spent);color:rgba(20,24,26,.62)}
+  /* the narrowest slice by construction, and flush against the bar's rounded
+     end — a tighter inset keeps its sum readable instead of blank */
+  .s-spent .w,.s-spent .a{padding-inline:4px}
+  .s-wedge{background:var(--promised);color:rgba(20,24,26,.74);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
+  .s-wedge .w,.s-wedge .a{padding-inline:6px}
+  /* on Sent the slice takes Spent's material before it is absorbed */
+  .s-wedge.merged{background:var(--spent);background-image:none}
   .s-free{background:var(--avail);color:#fff}
   .s-free .w{color:rgba(255,255,255,.82)}
   .s-free .a{font-size:13px;font-weight:600}
-  /* the label's line box is normalised to the sum's, so the gap between them
-     does not depend on the script's natural leading */
-  .seg .w{line-height:16.7px}
   /* narrow but not blind: the label goes, the sum stays */
   .seg.mute .w,.seg.mute .a{display:none}
   .seg.amt-only .w{display:none}
   .seg.amt-only{justify-content:flex-end}
-  /* the limit inside the wedge — divider material, not a state colour.
+  /* the limit inside the amount — divider material, not a state colour.
      1px solid like a list rule; ink at half strength so it survives the hatch.
-     The seam is 2px full ink (time); this is 1px half ink (rule). */
+     The seam is 2px full ink (a boundary in the month's money); this is
+     1px half ink (a boundary inside one slice). */
   .limitline{position:absolute;top:0;bottom:0;width:1px;background:rgba(20,24,26,.62);z-index:3;display:none}
   .limitline.on{display:block}
   .s-prom{background:var(--promised);color:rgba(20,24,26,.72);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
@@ -106,10 +100,9 @@
 
   .scale{display:flex;justify-content:space-between;margin-top:3px}
   .scale span{font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+  /* the note always describes the bar, on every step, so the block is never
+     empty and the horizon never shifts between steps */
   .note{font-size:15px;color:var(--muted);margin-top:5px;min-height:16px;line-height:1.4}
-  /* on the failure step the heading below answers "where is my money" directly,
-     so the explanatory line above the horizon would only say it twice */
-  .note:empty{display:none}
   .note b{font-weight:600;color:var(--ink)}
 
   /* zone under the horizon — one rule for all four steps:
@@ -163,6 +156,9 @@
 
   .act{margin-top:8px;height:52px;flex:0 0 52px;border-radius:13px;background:var(--ink);color:#fff;border:none;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .16s ease}
   .act:hover{background:#20262a}
+  /* an amount the month cannot back does not open the next step */
+  .act[disabled]{background:#DCD8D1;color:#9AA0A0;cursor:not-allowed}
+  .act[disabled]:hover{background:#DCD8D1}
   .act.ghost{background:none;color:var(--muted);border:1px solid var(--line);font-weight:500}
   .act.ghost:hover{background:rgba(20,24,26,.03)}
   /* leaving the transfer: ghost chrome + the departure glyph */
@@ -185,24 +181,9 @@
   .tab.on{color:var(--ink);font-weight:600}
   .tab.on .rule{background:var(--ink)}
 
-  /* controls outside the frame */
-  .ctl{display:flex;gap:10px;align-items:center}
-  .steps,.lang{display:flex;border:1px solid #CFCAC2;border-radius:8px;overflow:hidden;background:#F1EFEA}
-  .lang{direction:ltr}
-  .steps button,.lang button{border:none;background:none;padding:5px 11px;font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;font-weight:600;color:#767E7D}
-  .steps button+button,.lang button+button{border-inline-start:1px solid #CFCAC2}
-  .steps button.on,.lang button.on{background:var(--ink);color:#fff}
-
-  /* narrow screens: the frame stops being a mockup and becomes the app.
-     Full bleed, natural page scroll, and the flexible box keeps its content
-     height instead of collapsing — the frame grows, the content never spills. */
   @media (max-width:480px){
-    body{display:block;gap:0;padding:0;background:var(--paper);overflow:auto}
-    .frame{width:100%;height:auto;min-height:100vh;min-height:100dvh;border-radius:0;box-shadow:none}
-    .island,.home{display:none}
     .status{padding-top:8px}
     .zone{flex:1 0 auto}
-    .ctl{display:flex;justify-content:center;align-items:center;gap:6px;padding:9px 6px;background:var(--paper);border-top:1px solid var(--line)}
   }
 </style>
 </head>
@@ -231,22 +212,18 @@
       </div>
 
       <div class="horizon">
-        <div class="flagrow">
-          <div class="flagcell" id="flagcell">
-            <div class="flag"><b id="t-today"></b><em class="num" id="t-todayd"></em></div>
-          </div>
-        </div>
-        <div class="bar">
+        <div class="bar" id="bar">
           <div class="seg s-spent" id="g-spent"><span class="w" id="t-s1"></span><span class="a num ltr" id="v-spent"></span></div>
           <div class="seg s-wedge" id="g-wedge"><span class="w" id="t-sw"></span><span class="a num ltr" id="v-wedge"></span><span class="limitline" id="limitline"></span></div>
           <div class="seg s-free" id="g-free"><span class="w" id="t-s2"></span><span class="a num ltr" id="v-free"></span></div>
-          <div class="seg s-prom" id="g-prom"><span class="w" id="t-s3"></span><span class="a num ltr">2 200</span></div>
+          <div class="seg s-prom" id="g-prom"><span class="w" id="t-s3"></span><span class="a num ltr" id="v-prom"></span></div>
           <div class="seam" id="seam"></div>
         </div>
-        <div class="callrow" id="callrow"><div class="call" id="call"><i></i><u></u><span id="t-call"></span></div></div>
+        <div class="callrow" id="callrow"><div class="call" id="call"><i></i><u></u><span class="num ltr" id="t-call"></span></div></div>
+        <!-- the ends of the axis are money, so the bar states its own unit -->
         <div class="scale">
-          <span class="num" id="t-m1"></span>
-          <span class="num" id="t-m2"></span>
+          <span class="num ltr" id="t-ax0"></span>
+          <span class="num ltr" id="t-ax1"></span>
         </div>
         <div class="note" id="note"></div>
       </div>
@@ -257,26 +234,28 @@
     <div class="home"></div>
   </div>
 
+  <div class="cap">
+    <span class="cap-a" id="cap-a"></span>
+    <span class="cap-b" id="cap-b"></span>
+  </div>
   <div class="ctl">
-    <div class="steps" id="steps"></div>
-    <div class="lang">
-      <button data-l="ar" class="on">ar</button>
-      <button data-l="en">en</button>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-l="ar">AR</button>
+      <button type="button" data-l="en">EN</button>
     </div>
+    <!-- demo-only state switcher; filled in solely under ?debug=1 -->
+    <div class="steps" id="steps"></div>
   </div>
 
+<script src="model.js"></script>
 <script>
-  var TOTAL=9000,SPENT=1400,FREE=5400,PROM=2200;
+  /* aliases onto the shared model — the numbers themselves live in model.js */
+  var SPENT=MONTH.spent,FREE=MONTH.free,PROM=MONTH.promised,LIMIT=MONTH.limit;
 
-  /* Recipients live here, not in the link: Month hands over a key only, so no
-     name or phone number ever appears in the address bar. */
-  var PEOPLE={
-    abdullah:{ar:'عبدالله',en:'Abdullah',ini:{ar:'ع',en:'A'},tel:'+966 55 214 3387',g:'m'},
-    noura:{ar:'نورة',en:'Noura',ini:{ar:'ن',en:'N'},tel:'+966 50 883 1204',g:'f'},
-    faisal:{ar:'فيصل',en:'Faisal',ini:{ar:'ف',en:'F'},tel:'+966 54 671 9350',g:'m'}
-  };
+  /* Recipients live in the model, not in the link: Month hands over a key only,
+     so no name or phone number ever appears in the address bar. */
   var QP=new URLSearchParams(location.search);
-  var REC=PEOPLE[QP.get('r')]||PEOPLE.abdullah;
+  var REC=MONTH.people[QP.get('r')]||MONTH.people.abdullah;
   var PHONE=REC.tel;
   /* Arabic agrees the beneficiary complement and the imperative suffix with
      the recipient's gender; the route and result verbs agree with المبلغ. */
@@ -285,32 +264,31 @@
   var ACTIVATE=FEM?'وفعّلها':'وفعّله';
   var PRON=FEM?'her':'him';
   var startLang=(QP.get('lang')==='en')?'en':'ar';
-  function N(k){return REC[k]}
+  /* The state switcher is a tool for showing the prototype, not part of the
+     bank. It exists only when it is asked for, and the flag rides along with
+     the language so a demo session keeps both across screens. */
+  var DEBUG=QP.get('debug')==='1';
+  function n(v){return '<span class="num ltr">'+v+'</span>'}
 
-  var LASTAMT=300,QUICK=[100,300,500];
-  var LABEL_MIN=52; /* px a segment needs before its label fits inside */
-  var SEG_PAD=20,SPENT_PAD=12,AMT_MIN=36;
-  var LIMIT=2500;   /* sarie: quick transfer without an added beneficiary */
   var L={
-    ar:{dir:'rtl',title:'الشهر',mark:'أفق',dg:'4 سبتمبر 2026',dh:'22 ربيع الأول 1448 هـ',
-      acct:'جاري <b class="ltr">•••• 7742</b>',
+    ar:{dir:'rtl',title:'الشهر',mark:'أفق',
+      acct:'جاري <b class="ltr">'+MONTH.account+'</b>',
       availL:'المتاح الآن',amountL:'المبلغ',
-      monthSub:['من إجمالي ',' في الشهر'],
+      monthSub:['من ',' لهذا الشهر'],
       toSub:'إلى ',
-      s:['مصروف','متاح','موعود'],wedge:'محجوز',
-      today:'اليوم',todayd:'4 سبتمبر',m1:'1 سبتمبر',m2:'30 سبتمبر',
+      s:['مصروف','متاح','موعود'],wedge:'المبلغ',
       notes:{
-        amount:'المبلغ يخرج من <b>متاح</b>، لا من الشهر.',
-        fail:'',
-        confirm:'راجع الاسم قبل الإرسال. المبلغ محجوز ولم يُرسل بعد.',
-        wait:'المبلغ ثابت عند حد اليوم حتى يصل.',
-        sent:'اندمج المبلغ في <b>مصروف</b>، وتحرّك حد اليوم.',
-        limit:'الخط داخل المبلغ هو حد التحويل السريع — <b class="num ltr">2 500 SAR</b>.'
+        amount:'حساب مبدئي: هذا ما يبقى في <b>متاح</b> لو أرسلت المبلغ. لم يُخصم شيء بعد.',
+        over:'المبلغ أكبر من <b>متاح</b>، فلا يظهر على الشريط. اخفضه إلى '+n(money(MONTH.free))+' أو أقل.',
+        confirm:'راجع الاسم والمبلغ. الحساب ما زال كما هو — لم يُخصم شيء بعد.',
+        wait:'جارٍ التنفيذ. يخرج المبلغ من <b>متاح</b> عند وصوله.',
+        sent:'انتقل المبلغ من <b>متاح</b> إلى <b>مصروف</b>. مجموع الشهر لم يتغيّر.',
+        limit:'الخط داخل المبلغ هو حد التحويل السريع — '+n(money(MONTH.limit))+'.',
+        fail:'توزيع مال الشهر كما كان قبل المحاولة.'
       },
       rec:'المستلم',phone:'الجوال',amt:'المبلغ',
-      afterL:'المتاح بعد التحويل',afterOver:'أكبر من المتاح',
-      call:function(p){return p+'% من الشهر'},
-      lastL:function(a){return 'آخر تحويل ل'+REC.ar+' · <b class="num ltr">'+a+' SAR</b>'},reuse:'إعادة',
+      afterL:'المتاح بعد التحويل',afterOver:'يتجاوز المتاح بـ',
+      lastL:function(a){return 'آخر تحويل ل'+REC.ar+' · <b class="num ltr">'+money(a)+'</b>'},reuse:'إعادة',
       name:REC.ar,
       route:['خُصم من الحساب','شبكة سريع','وصل إلى '+REC.ar],
       sendBtn:'إرسال ',sending:'جارٍ الإرسال',
@@ -326,26 +304,26 @@
       failP:'لم يكتمل التحويل عبر <b>سريع</b>. حسابك كما هو.',
       retry:'إعادة المحاولة',changeAmt:'تغيير المبلغ',
       tabs:['الشهر','التحويلات','الحساب'],
-      stepNames:['مبلغ','تأكيد','انتظار','أُرسل','الحد','فشل']},
-    en:{dir:'ltr',title:'Month',mark:'Ufuq',dg:'4 September 2026',dh:'22 Rabi I 1448 AH',
-      acct:'Current <b class="ltr">•••• 7742</b>',
+      stepNames:['مبلغ','تأكيد','انتظار','أُرسل','الحد','فشل'],
+      capA:'أفق — تحويل',capB:'iPhone 390×844 · RTL · light'},
+    en:{dir:'ltr',title:'Month',mark:'Ufuq',
+      acct:'Current <b class="ltr">'+MONTH.account+'</b>',
       availL:'Available now',amountL:'Amount',
-      monthSub:['of ',' this month'],
+      monthSub:['of ',' for this month'],
       toSub:'to ',
-      s:['Spent','Available','Promised'],wedge:'Held',
-      today:'Today',todayd:'4 September',m1:'1 September',m2:'30 September',
+      s:['Spent','Available','Promised'],wedge:'Amount',
       notes:{
-        amount:'Taken from <b>Available</b>, not from the month.',
-        fail:'',
-        confirm:'Check the name before sending. The amount is held, not sent.',
-        wait:'The amount stays fixed at today\'s line until it lands.',
-        sent:'The amount merged into <b>Spent</b>, and today\'s line moved.',
-        limit:'The line inside the amount is the quick transfer limit — <b class="num ltr">2 500 SAR</b>.'
+        amount:'A preview: this is what would be left in <b>Available</b> if you send it. Nothing has been debited yet.',
+        over:'The amount is larger than <b>Available</b>, so it isn\'t drawn on the bar. Lower it to '+n(money(MONTH.free))+' or less.',
+        confirm:'Check the name and the amount. Your account is still untouched — nothing has been debited yet.',
+        wait:'In progress. The amount leaves <b>Available</b> when it lands.',
+        sent:'The amount moved from <b>Available</b> into <b>Spent</b>. The month\'s total is unchanged.',
+        limit:'The line inside the amount is the quick transfer limit — '+n(money(MONTH.limit))+'.',
+        fail:'The month\'s money is split exactly as it was before the attempt.'
       },
       rec:'Recipient',phone:'Phone',amt:'Amount',
-      afterL:'Available after transfer',afterOver:'More than available',
-      call:function(p){return p+'% of month'},
-      lastL:function(a){return 'Last to '+REC.en+' · <b class="num ltr">'+a+' SAR</b>'},reuse:'Reuse',
+      afterL:'Available after transfer',afterOver:'Over available by',
+      lastL:function(a){return 'Last to '+REC.en+' · <b class="num ltr">'+money(a)+'</b>'},reuse:'Reuse',
       name:REC.en,
       route:['Debited from account','sarie network','Delivered to '+REC.en],
       sendBtn:'Send ',sending:'Sending',
@@ -361,7 +339,8 @@
       failP:'The transfer through <b>sarie</b> didn\'t complete. Your account is unchanged.',
       retry:'Try again',changeAmt:'Change amount',
       tabs:['Month','Transfers','Account'],
-      stepNames:['Amount','Confirm','Waiting','Sent','Limit','Failed']}
+      stepNames:['Amount','Confirm','Waiting','Sent','Limit','Failed'],
+      capA:'Ufuq — Transfer',capB:'iPhone 390×844 · LTR · light'}
   };
 
   var ICONS='<svg width="18" height="11" viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx=".6" fill="#14181A"></rect><rect x="4.5" y="4.7" width="3" height="6.3" rx=".6" fill="#14181A"></rect><rect x="9" y="2.4" width="3" height="8.6" rx=".6" fill="#14181A"></rect><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="#14181A"></rect></svg><svg width="16" height="11" viewBox="0 0 16 11"><path d="M8 2.8c2.1 0 4 .8 5.4 2.2l1-1C12.7 2.3 10.5 1.3 8 1.3S3.3 2.3 1.6 4l1 1C4 3.6 5.9 2.8 8 2.8Z" fill="#14181A"></path><path d="M8 6c1.2 0 2.3.5 3.1 1.3l1-1C11 5.2 9.6 4.6 8 4.6s-3 .6-4.1 1.7l1 1C5.7 6.5 6.8 6 8 6Z" fill="#14181A"></path><circle cx="8" cy="9.4" r="1.3" fill="#14181A"></circle></svg>';
@@ -372,12 +351,18 @@
   var lang=startLang,step=0,amount='500',timer=null;
   /* departure glyph — marks a button that leaves the transfer */
   var EXT='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8.5 8.5M18 13.5V18a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h4.5"/></svg>';
-  function grp(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'\u00A0')}
   function set(id,v){document.getElementById(id).textContent=v}
   function html(id,v){document.getElementById(id).innerHTML=v}
-  function pct(v){return (v/TOTAL*100)}
 
-  function amountNum(){return Math.min(parseInt(amount||'0',10)||0,FREE)}
+  /* What was typed, unchanged. An amount above Available is refused \u2014 it is
+     never quietly reduced to the maximum, because the number on screen has to
+     stay the number the user entered. */
+  function amountNum(){return parseInt(amount||'0',10)||0}
+  function valid(){var a=amountNum();return a>0&&a<=FREE}
+  /* Only an amount the month can back gets a width: the bar's widths are real
+     money, so an impossible amount is drawn as nothing and explained in words
+     rather than shown at a size it does not have. */
+  function drawn(){return valid()?amountNum():0}
 
   /* The rule must equal the wedge exactly, and the wedge's real edge is not
      computable from its percentage: below the 12px floor flex-shrink moves it.
@@ -388,18 +373,15 @@
      width transition runs, so a segment that is still narrower than the
      threshold stays silent instead of showing clipped text for ~150ms. */
   function syncMute(){
-    var sent=step===3,failed=step===5;
-    [['g-spent',AMT_MIN],['g-wedge',null],['g-free',null],['g-prom',null]].forEach(function(p){
-      var e=document.getElementById(p[0]),c=getComputedStyle(e);
-      var inner=e.getBoundingClientRect().width-parseFloat(c.paddingLeft)-parseFloat(c.paddingRight);
-      if(p[0]==='g-wedge'){e.classList.toggle('mute',sent||failed||inner<LABEL_MIN);return}
-      if(p[1]!==null){
-        e.classList.toggle('mute',inner<p[1]);
-        e.classList.toggle('amt-only',inner>=p[1]&&inner<LABEL_MIN);
-        return;
-      }
-      e.classList.toggle('mute',inner<LABEL_MIN);
-    });
+    var wedge=document.getElementById('g-wedge');
+    function w(id){return document.getElementById(id).getBoundingClientRect().width}
+    segApply(document.getElementById('g-spent'),w('g-spent'),true);
+    segApply(document.getElementById('g-free'),w('g-free'),true);
+    segApply(document.getElementById('g-prom'),w('g-prom'),true);
+    /* the slice speaks through the callout below rather than a cramped sum,
+       and says nothing at all once it has been absorbed or rolled back */
+    segApply(wedge,w('g-wedge'),false);
+    if(step===3||step===5)wedge.classList.add('mute');
   }
 
   /* the width transition also drives the gate directly, so labels re-evaluate
@@ -440,9 +422,12 @@
   }
 
   function paint(){
-    var d=L[lang],rtl=d.dir==='rtl',a=amountNum(),sent=step===3,failed=step===5;
-    var spentV=sent?SPENT+a:SPENT, freeV=sent?FREE-a:FREE-a;
-    var seamPct=pct(sent?SPENT+a:SPENT);
+    var d=L[lang],rtl=d.dir==='rtl',sent=step===3,failed=step===5;
+    var a=amountNum(),w=drawn(),over=a>FREE;
+    var spentV=sent?SPENT+w:SPENT;
+    /* the seam is the edge of what has been spent, so it moves only when the
+       money does — and on Sent the money really has moved */
+    var seamPct=pct(spentV);
 
     /* On Sent the slice is not recoloured in place — it is absorbed: Spent takes
        its width and the slice goes to zero in the same frame, so the shared
@@ -453,97 +438,90 @@
        the slice keeps its held material and simply retreats to zero while
        Available grows back into it. No merged class — nothing was spent. */
     document.getElementById('g-wedge').classList.toggle('merged',sent);
-    document.getElementById('g-wedge').classList.toggle('gone',sent||failed);
-    document.getElementById('g-spent').style.width=pct(sent?spentV:SPENT)+'%';
-    document.getElementById('g-wedge').style.width=pct(sent||failed?0:a)+'%';
-    document.getElementById('g-free').style.width=pct(failed?FREE:FREE-a)+'%';
+    document.getElementById('g-spent').style.width=pct(spentV)+'%';
+    document.getElementById('g-wedge').style.width=pct(sent||failed?0:w)+'%';
+    document.getElementById('g-free').style.width=pct(failed?FREE:FREE-w)+'%';
     document.getElementById('g-prom').style.width=pct(PROM)+'%';
-    document.getElementById('flagcell').style.width=seamPct+'%';
     var seam=document.getElementById('seam');
     seam.style.right=rtl?seamPct+'%':'auto';
     seam.style.left=rtl?'auto':seamPct+'%';
 
-    /* the limit sits INSIDE the wedge: left of it leaves now,
+    /* the limit sits INSIDE the amount: left of it leaves now,
        right of it needs the recipient added. Divider material, not colour. */
-    var overLimit=a>LIMIT&&!sent&&!failed;
+    var overLimit=w>LIMIT&&!sent&&!failed;
     var ll=document.getElementById('limitline');
     ll.classList.toggle('on',overLimit);
-    if(overLimit)ll.style.insetInlineStart=(LIMIT/a*100)+'%';
+    if(overLimit)ll.style.insetInlineStart=(LIMIT/w*100)+'%';
 
     set('v-spent',grp(spentV));
-    set('v-wedge',a?grp(a):'');
+    set('v-wedge',w?grp(w):'');
     /* Available speaks the sum while the hero is taken by the typed amount,
        and the share once the hero returns to the balance */
-    set('v-free',sent?(pct(FREE-a)).toFixed(0)+'%':grp(failed?FREE:FREE-a));
-    set('t-sw',a?d.wedge:'');
+    set('v-free',sent?(pct(FREE-w)).toFixed(0)+'%':grp(failed?FREE:FREE-w));
+    set('v-prom',grp(PROM));
+    set('t-sw',w?d.wedge:'');
 
-    /* label fits inside only above a px threshold; a slice thinner than
-       that keeps its minimum width and speaks through a leader below */
-    /* the threshold measures the segment's INNER width — full width would
-       pass a segment whose padding leaves no room for the text */
-    var bw=document.querySelector('.bar').clientWidth||348;
-    function fits(w){return w*bw/100-SEG_PAD>=LABEL_MIN}
-    var sendPx=Math.max(pct(a)/100*bw,a>0?12:0);
-    /* Spent carries tighter padding, so its threshold is its own: too narrow
-       for the label, still wide enough for the sum — hence amt-only */
-    var spentInner=pct(sent?spentV:spentV)/100*bw-SPENT_PAD;
-    var gs=document.getElementById('g-spent');
-    gs.classList.toggle('mute',spentInner<AMT_MIN);
-    gs.classList.toggle('amt-only',spentInner>=AMT_MIN&&spentInner<LABEL_MIN);
-    document.getElementById('g-wedge').classList.toggle('mute',sent||failed||sendPx-SEG_PAD<LABEL_MIN);
+    /* Labels are gated on the width a segment actually has; the width itself
+       is untouched, so a slice too narrow to be labelled stays honest about
+       its size and speaks through the callout below the bar instead. */
     syncMute();trackCall();
-    document.getElementById('g-free').classList.toggle('mute',!fits(pct(failed?FREE:FREE-a)));
-    document.getElementById('g-prom').classList.toggle('mute',!fits(pct(PROM)));
 
-    var thin=a>0&&sendPx-SEG_PAD<LABEL_MIN&&!sent&&!failed;
+    var bw=document.getElementById('bar').clientWidth||348,
+        wedgeEl=document.getElementById('g-wedge');
+    var thin=w>0&&!sent&&!failed&&pct(w)/100*bw<segNeed(wedgeEl).full;
     var cr=document.getElementById('callrow');
     cr.classList.toggle('on',thin);
     /* height is held only while the callout is actually shown; the fold is
        animated on the segments' own curve so it reads as one movement */
     cr.classList.toggle('reserve',thin);
     if(thin){
-      set('t-call',d.call(pct(a)<1?'<1':pct(a).toFixed(1).replace(/\.0$/,'')));
+      set('t-call',money(w));
       syncCall();trackCall();
     }
 
     // hero: the typed amount IS the hero number until it is sent
     if(sent){
-      set('t-hl',d.availL);set('t-hv',grp(FREE-a));
-      html('t-hs',d.monthSub[0]+'<span class="num ltr">'+grp(TOTAL)+' SAR</span>'+d.monthSub[1]);
+      set('t-hl',d.availL);set('t-hv',grp(FREE-w));
+      html('t-hs',d.monthSub[0]+n(money(MONTH.total))+d.monthSub[1]);
     }else{
       set('t-hl',d.amountL);set('t-hv',grp(a));
-      html('t-hs',d.toSub+d.name+' · <span class="num ltr">'+PHONE+'</span>');
+      html('t-hs',d.toSub+d.name+' · '+n(PHONE));
     }
-    html('note',[d.notes.amount,d.notes.confirm,d.notes.wait,d.notes.sent,d.notes.limit,d.notes.fail][step]);
+    /* an unbackable amount is explained wherever the step would otherwise
+       describe a slice that is not on the bar */
+    html('note',(over&&!sent&&!failed)?d.notes.over
+      :[d.notes.amount,d.notes.confirm,d.notes.wait,d.notes.sent,d.notes.limit,d.notes.fail][step]);
     zone();
   }
 
   function zone(){
     var d=L[lang],a=amountNum(),z=document.getElementById('zone'),h='';
+    /* zero, empty and above-Available all block the next step in the same way */
+    var blocked=!valid();
     if(step===0){
-      var over=(parseInt(amount||'0',10)||0)>FREE;
+      var over=a>FREE;
       h='<div class="after'+(over?' over':'')+'">'+
           '<span class="after-l">'+(over?d.afterOver:d.afterL)+'</span>'+
-          '<span class="after-v num ltr">'+grp(FREE-a)+'<span class="cu">SAR</span></span>'+
+          '<span class="after-v num ltr">'+grp(over?a-FREE:FREE-a)+'<span class="cu">SAR</span></span>'+
         '</div>'+
-        '<div class="quick">'+QUICK.map(function(v){
+        '<div class="quick">'+MONTH.quick.map(function(v){
           return '<button data-v="'+v+'"'+(a===v?' class="on"':'')+'><span class="num ltr">'+grp(v)+'</span></button>';
         }).join('')+'</div>'+
-        '<div class="last"><span>'+d.lastL(grp(LASTAMT))+'</span><button data-reuse="1">'+d.reuse+'</button></div>';
+        '<div class="last"><span>'+d.lastL(MONTH.lastAmount)+'</span><button data-reuse="1">'+d.reuse+'</button></div>';
       var keys=['1','2','3','4','5','6','7','8','9','.','0','⌫'];
       h+='<div class="pad">'+keys.map(function(k){
         var gl=(k==='.'||k==='⌫')?' gl':'';
         return '<button class="k'+gl+'" data-k="'+k+'">'+k+'</button>';
       }).join('')+'</div>'+
-      '<button class="act" id="go">'+d.contBtn+'</button>';
+      '<button class="act" id="go"'+(blocked?' disabled':'')+'>'+d.contBtn+'</button>';
     }else if(step===4){
       h='<div class="lim-h">'+d.limH+'</div>'+
         '<div class="lim-p">'+d.limP+'</div>'+
         '<div class="rows lim-rows">'+
-          '<div class="row"><span class="row-l">'+d.limRow+'</span><span class="row-v num ltr">'+grp(LIMIT)+' SAR</span></div>'+
-          '<div class="row"><span class="row-l">'+d.amt+'</span><span class="row-v num ltr">'+grp(a)+' SAR</span></div>'+
+          '<div class="row"><span class="row-l">'+d.limRow+'</span><span class="row-v num ltr">'+money(LIMIT)+'</span></div>'+
+          '<div class="row"><span class="row-l">'+d.amt+'</span><span class="row-v num ltr">'+money(a)+'</span></div>'+
         '</div>'+
-        '<button class="act" data-act="sendlimit">'+d.sendBtn+'<span class="num ltr">'+grp(LIMIT)+' SAR</span> '+d.nowW+'</button>'+
+        '<button class="act" data-act="sendlimit"'+(LIMIT>FREE?' disabled':'')+'>'+d.sendBtn+'<span class="num ltr">'+money(LIMIT)+'</span> '+d.nowW+'</button>'+
         '<button class="act leave" data-act="add">'+EXT+'<span>'+d.addBene+'</span></button>'+
         '<button class="act bare" data-act="edit">'+d.editAmt+'</button>';
     }else if(step===5){
@@ -551,7 +529,7 @@
         '<div class="lim-p">'+d.failP+'</div>'+
         '<div class="rows lim-rows">'+
           '<div class="row"><span class="row-l">'+d.rec+'</span><span class="row-v">'+d.name+'</span></div>'+
-          '<div class="row"><span class="row-l">'+d.amt+'</span><span class="row-v num ltr">'+grp(a)+' SAR</span></div>'+
+          '<div class="row"><span class="row-l">'+d.amt+'</span><span class="row-v num ltr">'+money(a)+'</span></div>'+
         '</div>'+
         '<button class="act" data-act="retry">'+d.retry+'</button>'+
         '<button class="act bare" data-act="edit">'+d.changeAmt+'</button>';
@@ -559,9 +537,9 @@
       h='<div class="rows">'+
         '<div class="row lead"><span class="row-l">'+d.rec+'</span><span class="row-v">'+d.name+'</span></div>'+
         '<div class="row"><span class="row-l">'+d.phone+'</span><span class="row-v num ltr">'+PHONE+'</span></div>'+
-        '<div class="row"><span class="row-l">'+d.amt+'</span><span class="row-v num ltr">'+grp(a)+' SAR</span></div>'+
+        '<div class="row"><span class="row-l">'+d.amt+'</span><span class="row-v num ltr">'+money(a)+'</span></div>'+
         '</div>'+
-        '<button class="act" id="go">'+d.sendBtn+'<span class="num ltr">'+grp(a)+' SAR</span></button>';
+        '<button class="act" id="go"'+(blocked?' disabled':'')+'>'+d.sendBtn+'<span class="num ltr">'+money(a)+'</span></button>';
     }else if(step===2){
       var st=['done','now','next'];
       h='<div class="rows">'+d.route.map(function(r,i){
@@ -569,7 +547,7 @@
       }).join('')+'</div>'+
       '<div class="sending">'+d.sending+'</div>';
     }else{
-      h='<div class="result">'+d.resultW+'<span class="num ltr">'+grp(a)+' SAR</span></div>'+
+      h='<div class="result">'+d.resultW+'<span class="num ltr">'+money(a)+'</span></div>'+
         '<div class="result-sub">'+d.resultSub+'</div>'+
         '<div class="rows">'+d.route.map(function(r){
           return '<div class="row"><span class="mark done"></span><span class="step-n done">'+r+'</span></div>';
@@ -579,10 +557,14 @@
     z.innerHTML=h;
 
     var go=document.getElementById('go');
+    /* the guard repeats the disabled attribute because the step chips outside
+       the frame can land on Confirm with an amount that was never accepted */
     if(go)go.onclick=function(){
-      if(step===0)setStep(amountNum()>LIMIT?4:1);
-      else if(step===1)setStep(2);
-      else setStep(0);
+      if(step===0){if(!valid())return;setStep(amountNum()>LIMIT?4:1)}
+      else if(step===1){if(!valid())return;setStep(2)}
+      /* "Back to Month" goes back to Month, carrying the language and the
+         demo flag rather than quietly resetting to the amount step */
+      else location.href='index.html?lang='+lang+(DEBUG?'&debug=1':'');
     };
     /* send what the channel allows now */
     var sl=z.querySelector('[data-act="sendlimit"]');
@@ -597,7 +579,7 @@
       b.onclick=function(){amount=b.dataset.v;paint()};
     });
     var re=z.querySelector('[data-reuse]');
-    if(re)re.onclick=function(){amount=String(LASTAMT);paint()};
+    if(re)re.onclick=function(){amount=String(MONTH.lastAmount);paint()};
     [].slice.call(z.querySelectorAll('.k')).forEach(function(b){
       b.onclick=function(){
         var k=b.dataset.k;
@@ -627,20 +609,26 @@
     document.getElementById('frame').setAttribute('dir',d.dir);
     document.documentElement.setAttribute('lang',k);
     document.getElementById('status').innerHTML='<span class="t">9:41</span><div class="ic">'+ICONS+battery(rtl)+'</div>';
-    set('t-title',d.title);set('t-mark',d.mark);set('t-dg',d.dg);set('t-dh',d.dh);
+    set('t-title',d.title);set('t-mark',d.mark);
+    /* the dates stay here, in the header, where a date is read as a date */
+    set('t-dg',MONTH.day[k].g);set('t-dh',MONTH.day[k].h);
     html('t-acct',d.acct);
     set('t-s1',d.s[0]);set('t-s2',d.s[1]);set('t-s3',d.s[2]);
-    set('t-today',d.today);set('t-todayd',d.todayd);
-    set('t-m1',d.m1);set('t-m2',d.m2);
+    set('t-ax0','0');set('t-ax1',money(MONTH.total));
     document.getElementById('nav').innerHTML=d.tabs.map(function(t,i){
       return '<button class="tab'+(i===0?' on':'')+'"><span class="rule"></span>'+t+'</button>';
     }).join('');
-    document.getElementById('steps').innerHTML=d.stepNames.map(function(s,i){
-      return '<button'+(i===step?' class="on"':'')+'>'+s+'</button>';
-    }).join('');
-    [].slice.call(document.querySelectorAll('.steps button')).forEach(function(b,i){
-      b.addEventListener('click',function(){setStep(i)});
-    });
+    set('cap-a',d.capA);set('cap-b',d.capB);
+    /* left empty in normal mode: the states are reached by working the
+       screen, not by picking them off a panel */
+    if(DEBUG){
+      document.getElementById('steps').innerHTML=d.stepNames.map(function(s,i){
+        return '<button type="button"'+(i===step?' class="on"':'')+'>'+s+'</button>';
+      }).join('');
+      [].slice.call(document.querySelectorAll('.steps button')).forEach(function(b,i){
+        b.addEventListener('click',function(){setStep(i)});
+      });
+    }
     paint();
   }
 
@@ -649,6 +637,10 @@
       document.querySelectorAll('.lang button').forEach(function(x){x.classList.remove('on')});
       b.classList.add('on');
       render(b.dataset.l);
+      /* keep the address bar in step without disturbing the recipient key or
+         the demo flag, so a reload stays on the same transfer */
+      QP.set('lang',lang);
+      history.replaceState(null,'','?'+QP.toString());
     });
   });
 

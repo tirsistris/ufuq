@@ -1,0 +1,62 @@
+/* Presentation shell — the phone mockup, its caption and the language
+   switcher. Shared by both screens so they sit, scroll and place their
+   controls identically; the app's own styling stays inside each page. */
+
+html{height:100%}
+
+/* The frame's 12.5px ring and its drop shadow are box-shadows: they paint
+   outside the box and take no part in layout. Centring a fixed-height body
+   therefore parks the ring above the scroll origin, where nothing can reach
+   it — that is what clipped the top of the phone.
+
+   min-height (not height) lets the body grow past the viewport instead of
+   centring into it. A tall window still centres the composition; a short one
+   has no free space to distribute, so it starts at the gutter and scrolls
+   down. The gutter is the ring's room. */
+body{
+  min-height:100%;
+  background:#E8E6E1;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:22px;
+  padding:40px 24px 48px;
+  overflow-x:hidden;
+}
+
+.frame{width:390px;height:844px;flex-shrink:0;border-radius:54px;background:var(--paper);color:var(--ink);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 11px #0d0f11,0 0 0 12.5px #2b2f31,0 40px 80px rgba(30,34,40,.30)}
+.frame[dir=ltr]{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif}
+
+.cap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cap-a{font-size:19px;font-weight:600;color:var(--ink);font-family:'IBM Plex Sans',sans-serif}
+.cap-b{font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#78807F}
+
+/* controls that belong to the mockup, not to the bank */
+.ctl{display:flex;flex-direction:column;align-items:center;gap:10px}
+
+/* One switcher, one panel, same place on both screens. */
+.lang{display:flex;gap:4px;direction:ltr;background:#F1EFEA;border:1px solid #CFCAC2;border-radius:11px;padding:4px}
+.lang button{border:none;background:none;border-radius:8px;padding:8px 18px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.07em;color:#767E7D;transition:background .14s ease,color .14s ease}
+.lang button:hover{color:var(--ink)}
+.lang button.on{background:var(--ink);color:#fff}
+
+/* Demo-only state switcher. Filled in solely under ?debug=1; empty otherwise,
+   and an empty panel takes no room and draws no chrome. */
+.steps{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;direction:ltr;background:#F1EFEA;border:1px solid #CFCAC2;border-radius:11px;padding:4px}
+.steps:empty{display:none}
+.steps button{border:none;background:none;border-radius:8px;padding:7px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;font-weight:600;color:#767E7D}
+.steps button.on{background:var(--ink);color:#fff}
+
+/* Narrow screens: the frame stops being a mockup and becomes the app.
+   Full bleed, natural page scroll, and the flexible box keeps its content
+   height instead of collapsing — the frame grows, the content never spills. */
+@media (max-width:480px){
+  /* The service strip keeps its own row and the app takes what is left, so
+     the switcher sits on the first screen rather than a scroll below it —
+     and no hard-coded strip height has to be kept in sync. */
+  body{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;padding:0;background:var(--paper);min-height:100vh;min-height:100dvh}
+  .frame{width:100%;height:auto;flex:1 0 auto;border-radius:0;box-shadow:none}
+  .island,.home,.cap{display:none}
+  .ctl{gap:0;align-items:stretch}
+  .lang,.steps{width:100%;border:none;border-radius:0;border-top:1px solid var(--line);background:var(--paper);justify-content:center;gap:8px;padding:8px 10px}
+  .lang button{padding:9px 24px;font-size:13px}
+}
