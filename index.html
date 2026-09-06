@@ -81,8 +81,9 @@
   .sec{display:flex;align-items:baseline;justify-content:space-between;margin-top:10px;margin-bottom:1px}
   .sec h2{font-size:15px;font-weight:600}
   .sec .m{font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:var(--muted)}
-  .listwrap{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none}
-  .listwrap::-webkit-scrollbar{display:none}
+  /* natural height, never its own scroller: the phone's body is the one place
+     that scrolls when the frame is shorter than the screen it holds */
+  .listwrap{flex:1 0 auto;min-height:0;overflow:visible}
   .ob{display:flex;align-items:center;gap:11px;padding:6px 0;border-bottom:1px solid var(--line)}
   .ob:last-child{border-bottom:none}
   .hatch{width:3px;height:24px;flex-shrink:0;border-radius:2px;background:var(--promised);background-image:repeating-linear-gradient(48deg,transparent 0 3px,rgba(20,24,26,.34) 3px 4.2px)}
@@ -115,12 +116,31 @@
 
   @media (max-width:480px){
     .status{padding-top:8px}
-    .listwrap{flex:1 0 auto;min-height:0;overflow:visible}
   }
 </style>
 </head>
 <body>
-  <div class="frame" dir="rtl" id="frame">
+<div class="stage">
+
+  <aside class="pane pane-about">
+    <h1 class="brand-name">Ufuq</h1>
+    <p class="brand-line">Необанк с фокусом на доступных средствах</p>
+    <details class="fold fold-about" id="foldAbout" open>
+      <summary><span class="lbl-full">О концепции</span><span class="lbl-short">О концепции</span></summary>
+      <div class="fold-body about-body">
+        <p>Главный экран отвечает на вопрос: «Сколько я могу потратить сейчас, не затрагивая будущие обязательства?»</p>
+        <p>Денежная полоса разделяет средства месяца на потраченное, доступное и запланированные платежи. Перед переводом пользователь видит, сколько останется после операции.</p>
+        <p>Концепт ориентирован на Саудовскую Аравию: арабский RTL-интерфейс, SAR и локальный сценарий переводов.</p>
+        <details class="fold fold-visual">
+          <summary><span class="lbl-full">Визуальная идея</span><span class="lbl-short">Визуальная идея</span></summary>
+          <p>Тёплый фон, глубокий бирюзовый и тонкие разделители создают сдержанный характер. Штриховка отличает обязательства от доступных средств. Анимация показывает изменение состояния денег, а не движение календарного времени.</p>
+        </details>
+      </div>
+    </details>
+  </aside>
+
+  <main class="pane pane-phone">
+    <div class="frame" dir="rtl" id="frame">
     <div class="island"></div>
     <div class="status" id="status"></div>
     <div class="body">
@@ -177,20 +197,26 @@
     </div>
     <div class="nav" id="nav"></div>
     <div class="home"></div>
-  </div>
+    </div>
+  </main>
 
-  <div class="cap">
-    <span class="cap-a" id="cap-a"></span>
-    <span class="cap-b" id="cap-b"></span>
-  </div>
-  <div class="ctl">
-    <div class="lang" role="group" aria-label="Language">
+  <aside class="pane pane-side">
+    <details class="fold fold-screens" id="foldScreens" open>
+      <summary><span class="lbl-full">Экраны прототипа</span><span class="lbl-short">Экраны</span></summary>
+      <nav class="screens" id="screens"></nav>
+    </details>
+    <div class="lang" role="group" aria-label="Язык интерфейса">
       <button type="button" data-l="ar">AR</button>
       <button type="button" data-l="en">EN</button>
     </div>
-  </div>
+    <p class="demo-note">Демонстрационные данные</p>
+    <p class="demo-hint">Выберите экран или пройдите сценарий внутри приложения.</p>
+  </aside>
+
+</div>
 
 <script src="model.js"></script>
+<script src="shell.js"></script>
 <script>
   /* every sum and every share comes from MONTH; the dictionaries below carry
      wording only, so the two screens cannot disagree about the money */
@@ -215,8 +241,7 @@
       spentList:[['نقل','4 سبتمبر'],['مطعم','3 سبتمبر'],['وقود','3 سبتمبر'],['بقالة','2 سبتمبر'],['كهرباء','1 سبتمبر'],['صيدلية','1 سبتمبر']],
       qst:'إرسال سريع',
       act:'تحويل برقم الجوال',
-      tabs:['الشهر','التحويلات','الحساب'],
-      capA:'أفق — الشهر',capB:'iPhone 390×844 · RTL · light'
+      tabs:['الشهر','التحويلات','الحساب']
     },
     en:{
       dir:'ltr',title:'Month',mark:'Ufuq',
@@ -235,8 +260,7 @@
       spentList:[['Transport','4 September'],['Dining','3 September'],['Fuel','3 September'],['Groceries','2 September'],['Electricity','1 September'],['Pharmacy','1 September']],
       qst:'Quick send',
       act:'Transfer by phone number',
-      tabs:['Month','Transfers','Account'],
-      capA:'Ufuq — Month',capB:'iPhone 390×844 · LTR · light'
+      tabs:['Month','Transfers','Account']
     }
   };
 
@@ -247,13 +271,9 @@
       : '<svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="#14181A" stroke-opacity=".35" fill="none"></rect><rect x="2" y="2" width="15" height="8" rx="1.8" fill="#14181A"></rect><path d="M23 4v4c.7-.3 1.2-1 1.2-2S23.7 4.3 23 4Z" fill="#14181A" fill-opacity=".45"></path></svg>';
   }
 
-  /* The language travels in the URL so it survives a transfer and the way
-     back, and ?debug=1 travels with it so a demo session stays in demo mode.
-     Nothing else is ever put in the address bar. */
-  var QP=new URLSearchParams(location.search);
-  var DEBUG=QP.get('debug')==='1';
-  var cur=null,lang=(QP.get('lang')==='en')?'en':'ar';
-  function trail(){return '&lang='+lang+(DEBUG?'&debug=1':'')}
+  /* the shell owns the language and puts it in the URL, so it survives a
+     transfer and the way back */
+  var cur=null,lang=SHELL.lang();
 
   function set(id,v){document.getElementById(id).textContent=v}
   function html(id,v){document.getElementById(id).innerHTML=v}
@@ -324,7 +344,6 @@
     set('t-s1',d.s[0]);set('t-s2',d.s[1]);set('t-s3',d.s[2]);
     set('t-ax0','0');set('t-ax1',money(MONTH.total));
     set('t-qst',d.qst);set('t-act',d.act);
-    set('cap-a',d.capA);set('cap-b',d.capB);
 
     drawBar();
 
@@ -335,7 +354,7 @@
     /* the key travels, the person's data does not: no name or number in the URL */
     [].slice.call(document.querySelectorAll('#send .r')).forEach(function(b){
       b.onclick=function(){
-        location.href='transfer.html?r='+encodeURIComponent(b.dataset.r)+trail();
+        location.href=SHELL.transferUrl(b.dataset.r,'amount');
       };
     });
 
@@ -367,22 +386,7 @@
     });
   }
 
-  [].slice.call(document.querySelectorAll('.lang button')).forEach(function(b){
-    b.addEventListener('click',function(){
-      document.querySelectorAll('.lang button').forEach(function(x){x.classList.remove('on')});
-      b.classList.add('on');
-      render(b.dataset.l);
-      /* keep the address bar in step, so a reload or a shared link opens in
-         the language that is on screen */
-      QP.set('lang',lang);
-      history.replaceState(null,'','?'+QP.toString());
-    });
-  });
-
-  /* the arriving language also sets the toggle, so the control matches the screen */
-  [].slice.call(document.querySelectorAll('.lang button')).forEach(function(b){
-    b.classList.toggle('on',b.dataset.l===lang);
-  });
+  SHELL.init({page:'index',current:'home',onLang:render});
   render(lang);
 </script>
 </body>

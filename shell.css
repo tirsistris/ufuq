@@ -1,62 +1,164 @@
-/* Presentation shell — the phone mockup, its caption and the language
-   switcher. Shared by both screens so they sit, scroll and place their
-   controls identically; the app's own styling stays inside each page. */
+/* Presentation shell — how the prototype is shown, not how the bank works.
+
+   On a desktop it is three columns: what the concept is, the phone itself, and
+   the way to every screen. The composition is identical on both pages, so the
+   phone and the panels stay put as screens change. Everything inside the frame
+   is the bank's own styling and lives in the pages. */
+
+:root{
+  --stage:#E8E6E1;
+  --stage-ink:#1B1F21;
+  --stage-body:#3E4548;
+  --stage-muted:#6E7679;
+  --stage-line:#D7D3CC;
+  --stage-accent:#0B4F55;
+}
 
 html{height:100%}
-
-/* The frame's 12.5px ring and its drop shadow are box-shadows: they paint
-   outside the box and take no part in layout. Centring a fixed-height body
-   therefore parks the ring above the scroll origin, where nothing can reach
-   it — that is what clipped the top of the phone.
-
-   min-height (not height) lets the body grow past the viewport instead of
-   centring into it. A tall window still centres the composition; a short one
-   has no free space to distribute, so it starts at the gutter and scrolls
-   down. The gutter is the ring's room. */
 body{
   min-height:100%;
-  background:#E8E6E1;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:22px;
-  padding:40px 24px 48px;
+  background:var(--stage);
+  color:var(--stage-ink);
   overflow-x:hidden;
 }
 
-.frame{width:390px;height:844px;flex-shrink:0;border-radius:54px;background:var(--paper);color:var(--ink);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 11px #0d0f11,0 0 0 12.5px #2b2f31,0 40px 80px rgba(30,34,40,.30)}
+/* --gutter is the breathing room above and below the composition; the frame
+   is sized against it, so the phone always lands inside the window. */
+.stage{
+  --gutter:clamp(14px,2.2vh,28px);
+  display:grid;
+  grid-template-columns:minmax(250px,302px) auto minmax(198px,228px);
+  align-items:center;
+  justify-content:center;
+  gap:clamp(22px,3.4vw,58px);
+  min-height:100dvh;
+  padding:var(--gutter) clamp(18px,2.6vw,44px);
+}
+.pane-about{grid-column:1}
+.pane-phone{grid-column:2;display:flex;justify-content:center}
+.pane-side{grid-column:3}
+
+/* ---------- the phone ---------- */
+
+/* The ring and the drop shadow are box-shadows: they paint outside the box and
+   take no part in layout, so the height budget has to allow for them by hand.
+   A tall window keeps the phone at its design height; a short one shortens it
+   and the phone scrolls its own content, exactly as it does at full bleed.
+   Width, type sizes and control sizes never change. */
+.frame{
+  width:390px;flex-shrink:0;
+  height:min(844px,calc(100dvh - 2*var(--gutter) - 31px));
+  border-radius:54px;background:var(--paper);color:var(--ink);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 0 0 11px #0d0f11,0 0 0 12.5px #2b2f31,0 40px 80px rgba(30,34,40,.30);
+}
 .frame[dir=ltr]{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif}
 
-.cap{display:flex;flex-direction:column;align-items:center;gap:4px}
-.cap-a{font-size:19px;font-weight:600;color:var(--ink);font-family:'IBM Plex Sans',sans-serif}
-.cap-b{font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#78807F}
+/* One scroll region per screen, and only when the frame is too short for the
+   content: the phone's own body scrolls while its status bar and tab bar stay
+   put. The pages give their lists and action zones a natural height to match
+   (flex:1 0 auto), so no second scroller opens inside this one. */
+.body{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.body::-webkit-scrollbar{display:none}
 
-/* controls that belong to the mockup, not to the bank */
-.ctl{display:flex;flex-direction:column;align-items:center;gap:10px}
+/* The actions ride along the bottom of that scroll region, so a screen that
+   has to scroll inside a shortened frame never puts its primary action out of
+   reach. They sit on paper, and the content passes under a short fade. */
+/* --pad-b mirrors the pages' own .body padding-bottom. Sticky pins to the
+   content box, so without claiming that last strip the content would go on
+   showing through underneath the footer. */
+.body{--pad-b:10px}
+   Only the transfer's actions are pinned: those complete a step and must be
+   there when the step is on screen. The Month screen is a list — its button
+   sits at the end of the list and is reached by scrolling to it, the way any
+   phone screen behaves, rather than covering the quick-send row. */
+.zone-act{position:sticky;bottom:calc(-1 * var(--pad-b));z-index:6;flex-shrink:0;display:flex;flex-direction:column;background:var(--paper);padding-bottom:var(--pad-b)}
+.zone-act::before{content:'';position:absolute;inset-inline:0;top:-16px;height:16px;background:linear-gradient(to top,var(--paper),rgba(247,245,241,0));pointer-events:none}
 
-/* One switcher, one panel, same place on both screens. */
-.lang{display:flex;gap:4px;direction:ltr;background:#F1EFEA;border:1px solid #CFCAC2;border-radius:11px;padding:4px}
-.lang button{border:none;background:none;border-radius:8px;padding:8px 18px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.07em;color:#767E7D;transition:background .14s ease,color .14s ease}
-.lang button:hover{color:var(--ink)}
-.lang button.on{background:var(--ink);color:#fff}
+/* ---------- left: the concept ---------- */
 
-/* Demo-only state switcher. Filled in solely under ?debug=1; empty otherwise,
-   and an empty panel takes no room and draws no chrome. */
-.steps{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;direction:ltr;background:#F1EFEA;border:1px solid #CFCAC2;border-radius:11px;padding:4px}
-.steps:empty{display:none}
-.steps button{border:none;background:none;border-radius:8px;padding:7px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;font-weight:600;color:#767E7D}
-.steps button.on{background:var(--ink);color:#fff}
+.brand-name{font-family:'IBM Plex Sans',sans-serif;font-size:27px;font-weight:600;letter-spacing:-.015em;line-height:1.1}
+.brand-line{font-size:14.5px;line-height:1.45;color:var(--stage-muted);margin-top:6px}
+.pane p{font-size:13.5px;line-height:1.62;color:var(--stage-body)}
+.about-body p{margin-top:14px}
 
-/* Narrow screens: the frame stops being a mockup and becomes the app.
-   Full bleed, natural page scroll, and the flexible box keeps its content
-   height instead of collapsing — the frame grows, the content never spills. */
+/* a fold, not a card: a rule and a caret, nothing that competes with the phone */
+.fold{margin-top:16px;border-top:1px solid var(--stage-line);padding-top:11px}
+.fold>summary{list-style:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--stage-ink);display:flex;align-items:center;gap:8px}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::after{content:'';width:6px;height:6px;flex-shrink:0;border-right:1.5px solid var(--stage-muted);border-bottom:1.5px solid var(--stage-muted);transform:rotate(45deg) translate(-2px,-2px);transition:transform .18s ease}
+.fold[open]>summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.fold .lbl-short{display:none}
+.fold-body>p:first-child{margin-top:12px}
+
+/* on a wide desktop the concept is simply there to read */
+@media (min-width:1180px){
+  .fold-about{margin-top:0;border-top:none;padding-top:0}
+  .fold-about>summary{display:none}
+  .fold-about .about-body>p:first-child{margin-top:16px}
+}
+
+/* ---------- right: every screen, one click away ---------- */
+
+.pane-h{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--stage-muted)}
+.fold-screens>summary{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--stage-muted)}
+.screens{display:flex;flex-direction:column;margin-top:9px;margin-inline-start:-10px}
+.screens button{
+  appearance:none;border:none;background:none;text-align:start;width:100%;
+  font-family:inherit;font-size:14px;font-weight:500;color:var(--stage-body);
+  padding:7px 10px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;gap:9px;
+  transition:background .14s ease,color .14s ease;
+}
+.screens button::before{content:'';width:2px;height:14px;flex-shrink:0;border-radius:2px;background:transparent;transition:background .14s ease}
+.screens button:hover{background:rgba(20,24,26,.045);color:var(--stage-ink)}
+.screens button.on{color:var(--stage-ink);font-weight:600}
+.screens button.on::before{background:var(--stage-accent)}
+
+.pane-side .lang{margin-top:17px}
+.demo-note{font-size:12px;font-weight:600;color:var(--stage-ink);margin-top:17px}
+.demo-hint{font-size:12px;line-height:1.5;color:var(--stage-muted);margin-top:4px}
+
+.lang{display:inline-flex;gap:3px;direction:ltr;background:#EFECE6;border:1px solid var(--stage-line);border-radius:10px;padding:3px}
+.lang button{border:none;background:none;border-radius:7px;padding:7px 15px;font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:.07em;color:var(--stage-muted);cursor:pointer;transition:background .14s ease,color .14s ease}
+.lang button:hover{color:var(--stage-ink)}
+.lang button.on{background:var(--stage-ink);color:#fff}
+
+/* ---------- two columns: the phone and one compact panel ---------- */
+
+@media (max-width:1179px){
+  /* the empty tracks top and bottom centre the pair of panels against the
+     phone instead of letting the slack open a gap between them */
+  .stage{grid-template-columns:auto minmax(226px,286px);grid-template-rows:1fr auto auto 1fr}
+  .pane-phone{grid-column:1;grid-row:1 / -1;align-self:center}
+  .pane-about{grid-column:2;grid-row:2;align-self:end}
+  .pane-side{grid-column:2;grid-row:3;align-self:start;margin-top:20px}
+  .pane-about .brand-name{font-size:23px}
+}
+
+/* ---------- one column: the page simply scrolls ---------- */
+
+@media (max-width:699px){
+  .stage{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;gap:20px;align-items:start}
+  .pane-about{grid-column:1;grid-row:1;align-self:start}
+  .pane-phone{grid-column:1;grid-row:2}
+  .pane-side{grid-column:1;grid-row:3;margin-top:0}
+  .frame{height:844px}
+  .fold .lbl-full{display:none}
+  .fold .lbl-short{display:inline}
+  .fold-screens{margin-top:0;border-top:none;padding-top:0}
+}
+
+/* ---------- full bleed: the frame stops being a mockup and becomes the app.
+     No decorative ring where the app already fills the screen. ---------- */
+
 @media (max-width:480px){
-  /* The service strip keeps its own row and the app takes what is left, so
-     the switcher sits on the first screen rather than a scroll below it —
-     and no hard-coded strip height has to be kept in sync. */
-  body{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;padding:0;background:var(--paper);min-height:100vh;min-height:100dvh}
-  .frame{width:100%;height:auto;flex:1 0 auto;border-radius:0;box-shadow:none}
-  .island,.home,.cap{display:none}
-  .ctl{gap:0;align-items:stretch}
-  .lang,.steps{width:100%;border:none;border-radius:0;border-top:1px solid var(--line);background:var(--paper);justify-content:center;gap:8px;padding:8px 10px}
-  .lang button{padding:9px 24px;font-size:13px}
+  .stage{padding:0;gap:0;min-height:0}
+  .pane-about{padding:18px 18px 4px}
+  .pane-side{padding:14px 18px 22px;border-top:1px solid var(--stage-line)}
+  .frame{width:100%;height:auto;min-height:0;border-radius:0;box-shadow:none}
+  .island,.home{display:none}
+  .body{overflow-y:visible}
+  .lang{width:100%;justify-content:center}
+  .lang button{flex:1;padding:10px 0;font-size:13px}
 }

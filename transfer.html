@@ -108,8 +108,10 @@
 
   /* zone under the horizon — one rule for all four steps:
      content is anchored to the bottom, so every step's action lands
-     at the same distance from the nav and the air sits under the horizon */
-  .zone{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;margin-top:0}
+     at the same distance from the nav and the air sits under the horizon.
+     Natural height, never its own scroller: the phone's body is the one place
+     that scrolls when the frame is shorter than the screen it holds. */
+  .zone{flex:1 0 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;margin-top:0}
 
   /* entry aids (step 0) */
   .after{display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:#FCFBF9;transition:border-color .16s,background .16s}
@@ -184,12 +186,31 @@
 
   @media (max-width:480px){
     .status{padding-top:8px}
-    .zone{flex:1 0 auto}
   }
 </style>
 </head>
 <body>
-  <div class="frame" dir="rtl" id="frame">
+<div class="stage">
+
+  <aside class="pane pane-about">
+    <h1 class="brand-name">Ufuq</h1>
+    <p class="brand-line">Необанк с фокусом на доступных средствах</p>
+    <details class="fold fold-about" id="foldAbout" open>
+      <summary><span class="lbl-full">О концепции</span><span class="lbl-short">О концепции</span></summary>
+      <div class="fold-body about-body">
+        <p>Главный экран отвечает на вопрос: «Сколько я могу потратить сейчас, не затрагивая будущие обязательства?»</p>
+        <p>Денежная полоса разделяет средства месяца на потраченное, доступное и запланированные платежи. Перед переводом пользователь видит, сколько останется после операции.</p>
+        <p>Концепт ориентирован на Саудовскую Аравию: арабский RTL-интерфейс, SAR и локальный сценарий переводов.</p>
+        <details class="fold fold-visual">
+          <summary><span class="lbl-full">Визуальная идея</span><span class="lbl-short">Визуальная идея</span></summary>
+          <p>Тёплый фон, глубокий бирюзовый и тонкие разделители создают сдержанный характер. Штриховка отличает обязательства от доступных средств. Анимация показывает изменение состояния денег, а не движение календарного времени.</p>
+        </details>
+      </div>
+    </details>
+  </aside>
+
+  <main class="pane pane-phone">
+    <div class="frame" dir="rtl" id="frame">
     <div class="island"></div>
     <div class="status" id="status"></div>
     <div class="body">
@@ -233,22 +254,26 @@
     </div>
     <div class="nav" id="nav"></div>
     <div class="home"></div>
-  </div>
+    </div>
+  </main>
 
-  <div class="cap">
-    <span class="cap-a" id="cap-a"></span>
-    <span class="cap-b" id="cap-b"></span>
-  </div>
-  <div class="ctl">
-    <div class="lang" role="group" aria-label="Language">
+  <aside class="pane pane-side">
+    <details class="fold fold-screens" id="foldScreens" open>
+      <summary><span class="lbl-full">Экраны прототипа</span><span class="lbl-short">Экраны</span></summary>
+      <nav class="screens" id="screens"></nav>
+    </details>
+    <div class="lang" role="group" aria-label="Язык интерфейса">
       <button type="button" data-l="ar">AR</button>
       <button type="button" data-l="en">EN</button>
     </div>
-    <!-- demo-only state switcher; filled in solely under ?debug=1 -->
-    <div class="steps" id="steps"></div>
-  </div>
+    <p class="demo-note">Демонстрационные данные</p>
+    <p class="demo-hint">Выберите экран или пройдите сценарий внутри приложения.</p>
+  </aside>
+
+</div>
 
 <script src="model.js"></script>
+<script src="shell.js"></script>
 <script>
   /* aliases onto the shared model — the numbers themselves live in model.js */
   var SPENT=MONTH.spent,FREE=MONTH.free,PROM=MONTH.promised,LIMIT=MONTH.limit;
@@ -264,11 +289,12 @@
   var BENE=FEM?'مستفيدةً':'مستفيداً';
   var ACTIVATE=FEM?'وفعّلها':'وفعّله';
   var PRON=FEM?'her':'him';
-  var startLang=(QP.get('lang')==='en')?'en':'ar';
-  /* The state switcher is a tool for showing the prototype, not part of the
-     bank. It exists only when it is asked for, and the flag rides along with
-     the language so a demo session keeps both across screens. */
-  var DEBUG=QP.get('debug')==='1';
+  var startLang=SHELL.lang();
+  /* the shell names the states; ?s= opens one straight away with its own
+     demo amount, so Limit always arrives above the limit */
+  var STEP_KEY=['amount','confirm','waiting','sent','limit','failed'];
+  var START=SHELL.screen(QP.get('s')||'amount');
+  if(START.page!=='transfer')START=SHELL.screen('amount');
   function n(v){return '<span class="num ltr">'+v+'</span>'}
 
   var L={
@@ -304,9 +330,7 @@
       failH:'المبلغ بقي معك',
       failP:'لم يكتمل التحويل عبر <b>سريع</b>. حسابك كما هو.',
       retry:'إعادة المحاولة',changeAmt:'تغيير المبلغ',
-      tabs:['الشهر','التحويلات','الحساب'],
-      stepNames:['مبلغ','تأكيد','انتظار','أُرسل','الحد','فشل'],
-      capA:'أفق — تحويل',capB:'iPhone 390×844 · RTL · light'},
+      tabs:['الشهر','التحويلات','الحساب']},
     en:{dir:'ltr',title:'Month',mark:'Ufuq',
       acct:'Current <b class="ltr">'+MONTH.account+'</b>',
       availL:'Available now',amountL:'Amount',
@@ -339,9 +363,7 @@
       failH:'The money stayed with you',
       failP:'The transfer through <b>sarie</b> didn\'t complete. Your account is unchanged.',
       retry:'Try again',changeAmt:'Change amount',
-      tabs:['Month','Transfers','Account'],
-      stepNames:['Amount','Confirm','Waiting','Sent','Limit','Failed'],
-      capA:'Ufuq — Transfer',capB:'iPhone 390×844 · LTR · light'}
+      tabs:['Month','Transfers','Account']}
   };
 
   var ICONS='<svg width="18" height="11" viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx=".6" fill="#14181A"></rect><rect x="4.5" y="4.7" width="3" height="6.3" rx=".6" fill="#14181A"></rect><rect x="9" y="2.4" width="3" height="8.6" rx=".6" fill="#14181A"></rect><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="#14181A"></rect></svg><svg width="16" height="11" viewBox="0 0 16 11"><path d="M8 2.8c2.1 0 4 .8 5.4 2.2l1-1C12.7 2.3 10.5 1.3 8 1.3S3.3 2.3 1.6 4l1 1C4 3.6 5.9 2.8 8 2.8Z" fill="#14181A"></path><path d="M8 6c1.2 0 2.3.5 3.1 1.3l1-1C11 5.2 9.6 4.6 8 4.6s-3 .6-4.1 1.7l1 1C5.7 6.5 6.8 6 8 6Z" fill="#14181A"></path><circle cx="8" cy="9.4" r="1.3" fill="#14181A"></circle></svg>';
@@ -557,15 +579,27 @@
     }
     z.innerHTML=h;
 
+    /* Every step ends with its actions. Gather that trailing run into one
+       footer the shell can pin, so the primary action stays reachable when a
+       shortened frame makes the screen scroll. Wiring below still finds them:
+       they are one level deeper, not elsewhere. */
+    var foot=document.createElement('div');
+    foot.className='zone-act';
+    while(z.lastElementChild&&(z.lastElementChild.classList.contains('act')||
+                               z.lastElementChild.classList.contains('sending'))){
+      foot.insertBefore(z.lastElementChild,foot.firstChild);
+    }
+    if(foot.firstChild)z.appendChild(foot);
+
     var go=document.getElementById('go');
     /* the guard repeats the disabled attribute because the step chips outside
        the frame can land on Confirm with an amount that was never accepted */
     if(go)go.onclick=function(){
       if(step===0){if(!valid())return;setStep(amountNum()>LIMIT?4:1)}
       else if(step===1){if(!valid())return;setStep(2)}
-      /* "Back to Month" goes back to Month, carrying the language and the
-         demo flag rather than quietly resetting to the amount step */
-      else location.href='index.html?lang='+lang+(DEBUG?'&debug=1':'');
+      /* "Back to Month" goes back to Month, carrying the language rather
+         than quietly resetting to the amount step */
+      else location.href='index.html?lang='+lang;
     };
     /* send what the channel allows now */
     var sl=z.querySelector('[data-act="sendlimit"]');
@@ -593,14 +627,16 @@
     });
   }
 
-  function setStep(n){
+  /* amt seeds a state opened straight from the shell's list; the flow itself
+     calls this without one and carries whatever was typed */
+  function setStep(n,amt){
     if(timer){clearTimeout(timer);timer=null}
     step=n;
+    if(amt!==undefined)amount=amt;
     /* the limit state only exists above the limit */
     if(n===4&&(parseInt(amount||'0',10)||0)<=LIMIT)amount='3000';
-    [].slice.call(document.querySelectorAll('.steps button')).forEach(function(b,i){
-      b.classList.toggle('on',i===n);
-    });
+    /* working the phone keeps the list on the right side honest */
+    if(window.SHELL)SHELL.mark(STEP_KEY[n]);
     paint();
     if(n===2)timer=setTimeout(function(){setStep(3)},1900);
   }
@@ -619,37 +655,20 @@
     document.getElementById('nav').innerHTML=d.tabs.map(function(t,i){
       return '<button class="tab'+(i===0?' on':'')+'"><span class="rule"></span>'+t+'</button>';
     }).join('');
-    set('cap-a',d.capA);set('cap-b',d.capB);
-    /* left empty in normal mode: the states are reached by working the
-       screen, not by picking them off a panel */
-    if(DEBUG){
-      document.getElementById('steps').innerHTML=d.stepNames.map(function(s,i){
-        return '<button type="button"'+(i===step?' class="on"':'')+'>'+s+'</button>';
-      }).join('');
-      [].slice.call(document.querySelectorAll('.steps button')).forEach(function(b,i){
-        b.addEventListener('click',function(){setStep(i)});
-      });
-    }
     paint();
   }
 
-  [].slice.call(document.querySelectorAll('.lang button')).forEach(function(b){
-    b.addEventListener('click',function(){
-      document.querySelectorAll('.lang button').forEach(function(x){x.classList.remove('on')});
-      b.classList.add('on');
-      render(b.dataset.l);
-      /* keep the address bar in step without disturbing the recipient key or
-         the demo flag, so a reload stays on the same transfer */
-      QP.set('lang',lang);
-      history.replaceState(null,'','?'+QP.toString());
-    });
+  SHELL.init({
+    page:'transfer',
+    current:START.k,
+    /* a state on this page changes in place — no reload, so the composition
+       never jumps between screens */
+    onPick:function(s){setStep(s.step,s.amount);return true},
+    onLang:function(l){render(l)}
   });
 
-  /* the arriving lang also sets the toggle, so the control matches the screen */
-  [].slice.call(document.querySelectorAll('.lang button')).forEach(function(b){
-    b.classList.toggle('on',b.dataset.l===startLang);
-  });
   render(startLang);
+  setStep(START.step,START.amount);
 </script>
 </body>
 </html>
