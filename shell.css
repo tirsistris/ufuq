@@ -99,6 +99,23 @@ body{
   .fold-about .about-body>p:first-child{margin-top:16px}
 }
 
+/* The long read is a fold inside this panel, so opening it must not be able
+   to grow the composition: the panel takes at most the height the stage gives
+   it and scrolls its own text. The phone therefore never moves and never gets
+   clipped, whatever is open on the left.
+
+   The scrollbar is parked in the column gap (padding + negative margin of the
+   same size), so the text keeps its measure whether or not it is scrolling.
+
+   Below 700px this does not apply: the page is a single column there and
+   scrolling the page is the right behaviour. */
+@media (min-width:700px){
+  .pane-about{
+    max-height:calc(100dvh - 2*var(--gutter));
+    overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+    padding-inline-end:10px;margin-inline-end:-10px;
+  }
+}
 /* ---------- right: every screen, one click away ---------- */
 
 .pane-h{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--stage-muted)}
@@ -135,6 +152,15 @@ body{
   .pane-about{grid-column:2;grid-row:2;align-self:end}
   .pane-side{grid-column:2;grid-row:3;align-self:start;margin-top:20px}
   .pane-about .brand-name{font-size:23px}
+}
+
+/* The concept panel shares this column with the screen list, so its cap cannot
+   be written against the window alone. Pinning the stage to the window and
+   letting the panel's own row shrink below its content hands it exactly the
+   height the list leaves, without a hand-tuned number. */
+@media (min-width:700px) and (max-width:1179px){
+  .stage{height:100dvh;grid-template-rows:1fr minmax(0,auto) auto 1fr}
+  .pane-about{max-height:100%}
 }
 
 /* ---------- one column: the page simply scrolls ---------- */
