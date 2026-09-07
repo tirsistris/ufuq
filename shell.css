@@ -54,6 +54,18 @@ body{
 }
 .frame[dir=ltr]{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif}
 
+/* Both screens are in the frame; one of them is on show. The screen takes the
+   frame's column the way the status bar, the body and the tab bar used to take
+   it directly — one level deeper, same shape. Its basis is its content, so the
+   full-bleed layout, where the frame has no height of its own, still measures
+   itself against what is inside. */
+.screen{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.screen[hidden]{display:none}
+/* A screen arrives already at its size. Its transitions are there to describe
+   a change someone is watching, not to replay the state it was left in, so
+   they are held for the single frame it appears in. */
+.screen.no-anim,.screen.no-anim *{transition:none!important}
+
 /* One scroll region per screen, and only when the frame is too short for the
    content: the phone's own body scrolls while its status bar and tab bar stay
    put. The pages give their lists and action zones a natural height to match

@@ -7,123 +7,17 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23F7F5F1%27/%3E%3Crect x=%275%27 y=%2710%27 width=%274%27 height=%2712%27 fill=%27%23D8D5CF%27/%3E%3Crect x=%279%27 y=%2710%27 width=%2714%27 height=%2712%27 fill=%27%230B4F55%27/%3E%3Crect x=%2723%27 y=%2710%27 width=%274%27 height=%2712%27 fill=%27%23EFEBE4%27/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<!-- the phone is drawn entirely by these two, so the fetch is started from
+<!-- the phone is drawn entirely by these four, so the fetch is started from
      the head instead of waiting for the parser to reach the end of the body.
      They still run down there, in the same order — this only moves the
      download earlier, never the execution. -->
 <link rel="preload" as="script" href="model.js" />
 <link rel="preload" as="script" href="shell.js" />
+<link rel="preload" as="script" href="month.js" />
+<link rel="preload" as="script" href="transfer.js" />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="shell.css" />
-<style>
-  :root{--paper:#F7F5F1;--ink:#14181A;--muted:#6E7679;--avail:#0B4F55;--line:#E2DED7;--clay:#9C4A2F;--spent:#D8D5CF;--promised:#EFEBE4}
-  /* --avail alternates: olive #4C5622 · oxblood #6E2438 */
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased}
-  button{font-family:inherit;letter-spacing:0;cursor:pointer}
-  .num{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum" 1,"lnum" 1}
-  .ltr{direction:ltr;unicode-bidi:isolate}
-
-  /* the phone frame, its caption and the language switcher live in shell.css,
-     shared with the transfer screen so both compose and scroll alike */
-  .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:33px;border-radius:20px;background:#0b0d0e;z-index:30}
-  .status{display:flex;align-items:center;justify-content:space-between;padding:15px 28px 0;flex-shrink:0;height:44px}
-  .status .t{font-family:'IBM Plex Sans',sans-serif;font-size:15.5px;font-weight:600;font-variant-numeric:tabular-nums}
-  .status .ic{display:flex;align-items:center;gap:6px}
-  .home{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:99px;background:rgba(20,24,26,.28);z-index:25}
-  .body{flex:1;display:flex;flex-direction:column;padding:4px 20px 10px;min-height:0}
-
-  /* header */
-  .head{display:flex;align-items:center;justify-content:space-between;padding-top:2px}
-  .h-title{font-size:21px;font-weight:600}
-  .h-mark{font-size:13.5px;font-weight:500;color:var(--muted)}
-  .dates{display:flex;align-items:center;gap:11px;margin-top:6px}
-  .dates span{font-size:13px;font-weight:500;color:rgba(20,24,26,.74)}
-  .dates i{width:1px;height:12px;background:var(--line);display:block}
-
-  /* hero */
-  .hero{margin-top:12px}
-  .hero-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-  .hero-l{font-size:13.5px;color:var(--muted)}
-  .acct{font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap}
-  .acct b{font-weight:500;color:rgba(20,24,26,.72);letter-spacing:.4px}
-  .hero-amt{display:flex;align-items:baseline;gap:7px;margin-top:4px}
-  .hero-amt .v{font-size:38px;font-weight:600;line-height:1.02}
-  .hero-amt .c{font-size:18px;font-weight:500;color:var(--muted)}
-  .hero-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
-
-  /* horizon — a money bar. Widths are shares of the month's money and nothing
-     else; the seam is the edge of what has already gone, not a date. */
-  .horizon{margin-top:16px;position:relative}
-  .bar{display:flex;height:64px;border-radius:9px;overflow:hidden;position:relative;border:1px solid var(--line)}
-  /* no inline padding and no automatic minimum on the segment itself, so its
-     box is exactly its share: 0 SAR is 0 px, and the row never overflows and
-     shrinks the slices away from their true proportions */
-  .seg{display:flex;flex-direction:column;justify-content:space-between;padding:8px 0;min-width:0;overflow:hidden;position:relative;transition:filter .16s ease;cursor:pointer}
-  .seg .w{font-size:11.5px;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:5px;padding-inline:10px}
-  .seg .a{font-size:13px;font-weight:600;white-space:nowrap;padding-inline:10px}
-  /* narrow but not blind: the label goes, the sum stays */
-  .seg.mute .w,.seg.mute .a{display:none}
-  .seg.amt-only .w{display:none}
-  .seg.amt-only{justify-content:flex-end}
-  .s-spent{background:var(--spent);color:rgba(20,24,26,.62)}
-  /* the narrowest slice by construction, and flush against the bar's rounded
-     end — a tighter inset keeps its sum readable instead of blank */
-  .s-spent .w,.s-spent .a{padding-inline:4px}
-  .s-spent .a{font-size:12px}
-  .s-free{background:var(--avail);color:#fff}
-  .s-free .w{color:rgba(255,255,255,.82)}
-  .s-free .a{font-size:16px;font-weight:600}
-  .s-prom{background:var(--promised);color:rgba(20,24,26,.72);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
-  .seam{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);z-index:4}
-  .seg.dim{filter:saturate(.55) opacity(.5)}
-  .caret{width:9px;height:9px;flex-shrink:0;opacity:.65}
-  .scale{display:flex;justify-content:space-between;margin-top:5px}
-  .scale span{font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:var(--muted)}
-  .note{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px;line-height:1.4}
-  .note b{font-weight:600;color:var(--ink)}
-
-  /* list */
-  .sec{display:flex;align-items:baseline;justify-content:space-between;margin-top:10px;margin-bottom:1px}
-  .sec h2{font-size:15px;font-weight:600}
-  .sec .m{font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:var(--muted)}
-  /* natural height, never its own scroller: the phone's body is the one place
-     that scrolls when the frame is shorter than the screen it holds */
-  .listwrap{flex:1 0 auto;min-height:0;overflow:visible}
-  .ob{display:flex;align-items:center;gap:11px;padding:6px 0;border-bottom:1px solid var(--line)}
-  .ob:last-child{border-bottom:none}
-  .hatch{width:3px;height:24px;flex-shrink:0;border-radius:2px;background:var(--promised);background-image:repeating-linear-gradient(48deg,transparent 0 3px,rgba(20,24,26,.34) 3px 4.2px)}
-  .solid{width:3px;height:24px;flex-shrink:0;border-radius:2px;background:#C9C5BE}
-  .ob-n{font-size:13.5px;font-weight:500}
-  .ob-d{font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;color:var(--muted);margin-top:1px}
-  .ob-d .soon{color:var(--clay);font-weight:600}
-  .ob-a{margin-inline-start:auto;font-size:14px;font-weight:600}
-  .ob-a.past{color:rgba(20,24,26,.55);font-weight:500}
-
-  /* quick send */
-  .send{display:flex;gap:9px;margin-top:3px}
-  .r{flex:1;border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:none;text-align:start;transition:border-color .16s ease}
-  .r:hover{border-color:#C8C3B9}
-  .r .mono{width:29px;height:29px;border-radius:9px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:600;color:rgba(20,24,26,.7)}
-  .r .n{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-  /* action */
-  .act{margin-top:12px;height:52px;flex:0 0 52px;border-radius:13px;background:var(--ink);color:#fff;border:none;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .16s ease}
-  .act:hover{background:#20262a}
-  .act:active{background:#0b0d0e}
-
-  /* tab bar — type only, no fills */
-  .nav{flex-shrink:0;display:flex;border-top:1px solid var(--line);padding:0 14px 20px}
-  .tab{flex:1;background:none;border:none;padding:11px 2px 0;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--muted);transition:color .14s ease}
-  .tab:hover{color:rgba(20,24,26,.7)}
-  .tab .rule{width:16px;height:2px;border-radius:2px;background:transparent}
-  .tab.on{color:var(--ink);font-weight:600}
-  .tab.on .rule{background:var(--ink)}
-
-  @media (max-width:480px){
-    .status{padding-top:8px}
-  }
-</style>
+<link rel="stylesheet" href="screens.css" />
 </head>
 <body>
 <div class="stage">
@@ -155,62 +49,115 @@
   </aside>
 
   <main class="pane pane-phone">
+    <!-- One phone, opened once. Both screens are real markup inside it and the
+         shell shows one at a time, so moving between them is a class change
+         rather than a new document. No page is ever built from a string of
+         HTML, and no id is written twice: inside a screen an element is
+         addressed by data-el, looked up only within that screen's own root. -->
     <div class="frame" dir="rtl" id="frame">
     <div class="island"></div>
-    <div class="status" id="status"></div>
-    <div class="body">
-      <div class="head">
-        <h1 class="h-title" id="t-title"></h1>
-        <span class="h-mark" id="t-mark"></span>
-      </div>
-      <div class="dates">
-        <span class="num" id="t-dg"></span>
-        <i></i>
-        <span class="num" id="t-dh"></span>
-      </div>
 
-      <div class="hero">
-        <div class="hero-top">
-          <div class="hero-l" id="t-hl"></div>
-          <div class="acct" id="t-acct"></div>
+    <section class="screen screen-month" data-screen="month">
+      <div class="status" data-el="status"></div>
+      <div class="body">
+        <div class="head">
+          <h1 class="h-title" data-el="t-title"></h1>
+          <span class="h-mark" data-el="t-mark"></span>
         </div>
-        <div class="hero-amt ltr"><span class="v num" id="t-hv"></span><span class="c">SAR</span></div>
-        <div class="hero-sub" id="t-hs"></div>
-      </div>
+        <div class="dates">
+          <span class="num" data-el="t-dg"></span>
+          <i></i>
+          <span class="num" data-el="t-dh"></span>
+        </div>
 
-      <div class="horizon">
-        <div class="bar" id="bar">
-          <div class="seg s-spent" id="g-spent" data-k="spent">
-            <span class="w"><span id="t-s1"></span><svg class="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.2 5 7l4-3.8"></path></svg></span>
-            <span class="a num ltr" id="v-spent"></span>
+        <div class="hero">
+          <div class="hero-top">
+            <div class="hero-l" data-el="t-hl"></div>
+            <div class="acct" data-el="t-acct"></div>
           </div>
-          <div class="seg s-free" id="g-free" data-k="free"><span class="w" id="t-s2"></span><span class="a num ltr" id="v-free"></span></div>
-          <div class="seg s-prom" id="g-prom" data-k="prom"><span class="w" id="t-s3"></span><span class="a num ltr" id="v-prom"></span></div>
-          <div class="seam" id="seam"></div>
+          <div class="hero-amt ltr"><span class="v num" data-el="t-hv"></span><span class="c">SAR</span></div>
+          <div class="hero-sub" data-el="t-hs"></div>
         </div>
-        <!-- the ends of the axis are money, so the bar states its own unit -->
-        <div class="scale">
-          <span class="num ltr" id="t-ax0"></span>
-          <span class="num ltr" id="t-ax1"></span>
+
+        <div class="horizon">
+          <div class="bar" data-el="bar">
+            <div class="seg s-spent" data-el="g-spent" data-k="spent">
+              <span class="w"><span data-el="t-s1"></span><svg class="caret" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.2 5 7l4-3.8"></path></svg></span>
+              <span class="a num ltr" data-el="v-spent"></span>
+            </div>
+            <div class="seg s-free" data-el="g-free" data-k="free"><span class="w" data-el="t-s2"></span><span class="a num ltr" data-el="v-free"></span></div>
+            <div class="seg s-prom" data-el="g-prom" data-k="prom"><span class="w" data-el="t-s3"></span><span class="a num ltr" data-el="v-prom"></span></div>
+            <div class="seam" data-el="seam"></div>
+          </div>
+          <!-- the ends of the axis are money, so the bar states its own unit -->
+          <div class="scale">
+            <span class="num ltr" data-el="t-ax0"></span>
+            <span class="num ltr" data-el="t-ax1"></span>
+          </div>
+          <div class="note" data-el="note"></div>
         </div>
-        <div class="note" id="note"></div>
+
+        <div class="sec">
+          <h2 data-el="t-obt"></h2>
+          <span class="m ltr" data-el="t-obtotal"></span>
+        </div>
+        <div class="listwrap"><div data-el="obs"></div></div>
+
+        <div class="sec"><h2 data-el="t-qst"></h2></div>
+        <div class="send" data-el="send"></div>
+
+        <button class="act">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="6" r="1.3" fill="#fff"></circle><circle cx="12" cy="6" r="1.3" fill="#fff"></circle><circle cx="18" cy="6" r="1.3" fill="#fff"></circle><circle cx="6" cy="12" r="1.3" fill="#fff"></circle><circle cx="12" cy="12" r="1.3" fill="#fff"></circle><circle cx="18" cy="12" r="1.3" fill="#fff"></circle><circle cx="9" cy="18" r="1.3" fill="#fff"></circle><circle cx="15" cy="18" r="1.3" fill="#fff"></circle></svg>
+          <span data-el="t-act"></span>
+        </button>
       </div>
+      <div class="nav" data-el="nav"></div>
+    </section>
 
-      <div class="sec">
-        <h2 id="t-obt"></h2>
-        <span class="m ltr" id="t-obtotal"></span>
+    <section class="screen screen-transfer" data-screen="transfer" hidden>
+      <div class="status" data-el="status"></div>
+      <div class="body">
+        <div class="head">
+          <h1 class="h-title" data-el="t-title"></h1>
+          <span class="h-mark" data-el="t-mark"></span>
+        </div>
+        <div class="dates">
+          <span class="num" data-el="t-dg"></span>
+          <i></i>
+          <span class="num" data-el="t-dh"></span>
+        </div>
+
+        <div class="hero">
+          <div class="hero-top">
+            <div class="hero-l" data-el="t-hl"></div>
+            <div class="acct" data-el="t-acct"></div>
+          </div>
+          <div class="hero-amt ltr"><span class="v num" data-el="t-hv"></span><span class="c">SAR</span></div>
+          <div class="hero-sub" data-el="t-hs"></div>
+        </div>
+
+        <div class="horizon">
+          <div class="bar" data-el="bar">
+            <div class="seg s-spent" data-el="g-spent"><span class="w" data-el="t-s1"></span><span class="a num ltr" data-el="v-spent"></span></div>
+            <div class="seg s-wedge" data-el="g-wedge"><span class="w" data-el="t-sw"></span><span class="a num ltr" data-el="v-wedge"></span><span class="limitline" data-el="limitline"></span></div>
+            <div class="seg s-free" data-el="g-free"><span class="w" data-el="t-s2"></span><span class="a num ltr" data-el="v-free"></span></div>
+            <div class="seg s-prom" data-el="g-prom"><span class="w" data-el="t-s3"></span><span class="a num ltr" data-el="v-prom"></span></div>
+            <div class="seam" data-el="seam"></div>
+          </div>
+          <div class="callrow" data-el="callrow"><div class="call" data-el="call"><i></i><u></u><span class="num ltr" data-el="t-call"></span></div></div>
+          <!-- the ends of the axis are money, so the bar states its own unit -->
+          <div class="scale">
+            <span class="num ltr" data-el="t-ax0"></span>
+            <span class="num ltr" data-el="t-ax1"></span>
+          </div>
+          <div class="note" data-el="note"></div>
+        </div>
+
+        <div class="zone" data-el="zone"></div>
       </div>
-      <div class="listwrap"><div id="obs"></div></div>
+      <div class="nav" data-el="nav"></div>
+    </section>
 
-      <div class="sec"><h2 id="t-qst"></h2></div>
-      <div class="send" id="send"></div>
-
-      <button class="act">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="6" r="1.3" fill="#fff"></circle><circle cx="12" cy="6" r="1.3" fill="#fff"></circle><circle cx="18" cy="6" r="1.3" fill="#fff"></circle><circle cx="6" cy="12" r="1.3" fill="#fff"></circle><circle cx="12" cy="12" r="1.3" fill="#fff"></circle><circle cx="18" cy="12" r="1.3" fill="#fff"></circle><circle cx="9" cy="18" r="1.3" fill="#fff"></circle><circle cx="15" cy="18" r="1.3" fill="#fff"></circle></svg>
-        <span id="t-act"></span>
-      </button>
-    </div>
-    <div class="nav" id="nav"></div>
     <div class="home"></div>
     </div>
   </main>
@@ -232,177 +179,10 @@
 
 <script src="model.js"></script>
 <script src="shell.js"></script>
-<script>
-  /* every sum and every share comes from MONTH; the dictionaries below carry
-     wording only, so the two screens cannot disagree about the money */
-  var SH={spent:pct(MONTH.spent).toFixed(0),free:pct(MONTH.free).toFixed(0),prom:pct(MONTH.promised).toFixed(0)};
-  function n(v){return '<span class="num ltr">'+v+'</span>'}
-
-  var L={
-    ar:{
-      dir:'rtl',title:'الشهر',mark:'أفق',
-      hl:'المتاح الآن',acct:'جاري <b class="ltr">'+MONTH.account+'</b>',
-      hs:['من ',' لهذا الشهر'],
-      s:['مصروف','متاح','موعود'],
-      note:'الشريط يقسم مال الشهر — '+n(money(MONTH.total))+': رصيد أول الشهر والوارد. الطول مبلغ، لا وقت.',
-      drill:{
-        spent:'<b>مصروف</b> — '+n(money(MONTH.spent))+' · '+SH.spent+'% من مال الشهر. خرج من الحساب.',
-        free:'<b>متاح</b> — '+n(money(MONTH.free))+' · '+SH.free+'% من مال الشهر. هذا وحده لك الآن.',
-        prom:'<b>موعود</b> — '+n(money(MONTH.promised))+' · '+SH.prom+'% من مال الشهر. على الحساب، لكنه محسوب لغيرك. المواعيد في القائمة أدناه.'
-      },
-      obt:'التزامات قادمة',
-      obs:[['قسط السيارة','8 سبتمبر','بعد 4 أيام'],['تأمين طبي','15 سبتمبر',''],['رسوم المدرسة','22 سبتمبر',''],['اشتراكات','28 سبتمبر','']],
-      spentT:'ما صُرف حتى الآن',
-      spentList:[['نقل','4 سبتمبر'],['مطعم','3 سبتمبر'],['وقود','3 سبتمبر'],['بقالة','2 سبتمبر'],['كهرباء','1 سبتمبر'],['صيدلية','1 سبتمبر']],
-      qst:'إرسال سريع',
-      act:'تحويل برقم الجوال',
-      tabs:['الشهر','التحويلات','الحساب']
-    },
-    en:{
-      dir:'ltr',title:'Month',mark:'Ufuq',
-      hl:'Available now',acct:'Current <b class="ltr">'+MONTH.account+'</b>',
-      hs:['of ',' for this month'],
-      s:['Spent','Available','Promised'],
-      note:'The bar splits the month\'s money — '+n(money(MONTH.total))+': opening balance plus what came in. Length is an amount, not time.',
-      drill:{
-        spent:'<b>Spent</b> — '+n(money(MONTH.spent))+' · '+SH.spent+'% of the month\'s money. Already out of the account.',
-        free:'<b>Available</b> — '+n(money(MONTH.free))+' · '+SH.free+'% of the month\'s money. This alone is yours now.',
-        prom:'<b>Promised</b> — '+n(money(MONTH.promised))+' · '+SH.prom+'% of the month\'s money. In the account, spoken for. Due dates are in the list below.'
-      },
-      obt:'Upcoming commitments',
-      obs:[['Car instalment','8 September','in 4 days'],['Health insurance','15 September',''],['School fees','22 September',''],['Subscriptions','28 September','']],
-      spentT:'Spent so far',
-      spentList:[['Transport','4 September'],['Dining','3 September'],['Fuel','3 September'],['Groceries','2 September'],['Electricity','1 September'],['Pharmacy','1 September']],
-      qst:'Quick send',
-      act:'Transfer by phone number',
-      tabs:['Month','Transfers','Account']
-    }
-  };
-
-  var ICONS='<svg width="18" height="11" viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx=".6" fill="#14181A"></rect><rect x="4.5" y="4.7" width="3" height="6.3" rx=".6" fill="#14181A"></rect><rect x="9" y="2.4" width="3" height="8.6" rx=".6" fill="#14181A"></rect><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="#14181A"></rect></svg><svg width="16" height="11" viewBox="0 0 16 11"><path d="M8 2.8c2.1 0 4 .8 5.4 2.2l1-1C12.7 2.3 10.5 1.3 8 1.3S3.3 2.3 1.6 4l1 1C4 3.6 5.9 2.8 8 2.8Z" fill="#14181A"></path><path d="M8 6c1.2 0 2.3.5 3.1 1.3l1-1C11 5.2 9.6 4.6 8 4.6s-3 .6-4.1 1.7l1 1C5.7 6.5 6.8 6 8 6Z" fill="#14181A"></path><circle cx="8" cy="9.4" r="1.3" fill="#14181A"></circle></svg>';
-  function battery(rtl){
-    return rtl
-      ? '<svg width="25" height="12" viewBox="0 0 25 12"><rect x="3.5" y=".5" width="21" height="11" rx="3" stroke="#14181A" stroke-opacity=".35" fill="none"></rect><rect x="5" y="2" width="15" height="8" rx="1.8" fill="#14181A"></rect><path d="M2 4v4c-.7-.3-1.2-1-1.2-2S1.3 4.3 2 4Z" fill="#14181A" fill-opacity=".45"></path></svg>'
-      : '<svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="#14181A" stroke-opacity=".35" fill="none"></rect><rect x="2" y="2" width="15" height="8" rx="1.8" fill="#14181A"></rect><path d="M23 4v4c.7-.3 1.2-1 1.2-2S23.7 4.3 23 4Z" fill="#14181A" fill-opacity=".45"></path></svg>';
-  }
-
-  /* the shell owns the language and puts it in the URL, so it survives a
-     transfer and the way back */
-  var cur=null,lang=SHELL.lang();
-
-  function set(id,v){document.getElementById(id).textContent=v}
-  function html(id,v){document.getElementById(id).innerHTML=v}
-
-  /* the label comes from the dictionary, the sum from MONTH, paired by index */
-  function commitments(){
-    var d=L[lang];
-    set('t-obt',d.obt);set('t-obtotal',money(MONTH.promised));
-    document.getElementById('obs').innerHTML=d.obs.map(function(o,i){
-      return '<div class="ob"><span class="hatch"></span><div><div class="ob-n">'+o[0]+'</div>'+
-        '<div class="ob-d"><span>'+o[1]+'</span>'+(o[2]?' · <span class="soon">'+o[2]+'</span>':'')+'</div></div>'+
-        '<span class="ob-a num ltr">'+grp(MONTH.commitments[i])+'</span></div>';
-    }).join('');
-  }
-  function spentHistory(){
-    var d=L[lang];
-    set('t-obt',d.spentT);set('t-obtotal',money(MONTH.spent));
-    document.getElementById('obs').innerHTML=d.spentList.map(function(o,i){
-      return '<div class="ob"><span class="solid"></span><div><div class="ob-n">'+o[0]+'</div>'+
-        '<div class="ob-d">'+o[1]+'</div></div>'+
-        '<span class="ob-a past num ltr">'+grp(MONTH.spends[i])+'</span></div>';
-    }).join('');
-  }
-
-  /* Widths are shares of MONTH.total, so they always add to the whole bar and
-     a slice worth nothing occupies nothing. The seam sits on the spent/available
-     edge — the same boundary the segments already draw, stated once more in ink. */
-  function drawBar(){
-    var rtl=L[lang].dir==='rtl',w=pct(MONTH.spent);
-    document.getElementById('g-spent').style.width=w+'%';
-    document.getElementById('g-free').style.width=pct(MONTH.free)+'%';
-    document.getElementById('g-prom').style.width=pct(MONTH.promised)+'%';
-    var seam=document.getElementById('seam');
-    seam.style.right=rtl?w+'%':'auto';
-    seam.style.left=rtl?'auto':w+'%';
-    set('v-spent',grp(MONTH.spent));
-    set('v-free',SH.free+'%');
-    set('v-prom',grp(MONTH.promised));
-    fitLabels();
-  }
-
-  /* a label is shown only where it physically fits; the width it was measured
-     against never changes because of the answer */
-  function fitLabels(){
-    var bw=document.getElementById('bar').clientWidth;
-    if(!bw)return;
-    segApply(document.getElementById('g-spent'),pct(MONTH.spent)/100*bw,true);
-    segApply(document.getElementById('g-free'),pct(MONTH.free)/100*bw,true);
-    segApply(document.getElementById('g-prom'),pct(MONTH.promised)/100*bw,true);
-  }
-  window.addEventListener('resize',fitLabels);
-
-  function render(k){
-    lang=k;var d=L[k],rtl=d.dir==='rtl';
-    var f=document.getElementById('frame');
-    f.setAttribute('dir',d.dir);
-    document.documentElement.setAttribute('lang',k);
-
-    document.getElementById('status').innerHTML=
-      '<span class="t">9:41</span><div class="ic">'+ICONS+battery(rtl)+'</div>';
-
-    set('t-title',d.title);set('t-mark',d.mark);
-    /* the dates stay here, in the header, where a date is read as a date */
-    set('t-dg',MONTH.day[k].g);set('t-dh',MONTH.day[k].h);
-    set('t-hl',d.hl);html('t-acct',d.acct);
-    set('t-hv',grp(MONTH.free));
-    html('t-hs',d.hs[0]+n(money(MONTH.total))+d.hs[1]);
-    set('t-s1',d.s[0]);set('t-s2',d.s[1]);set('t-s3',d.s[2]);
-    set('t-ax0','0');set('t-ax1',money(MONTH.total));
-    set('t-qst',d.qst);set('t-act',d.act);
-
-    drawBar();
-
-    document.getElementById('send').innerHTML=MONTH.order.map(function(key){
-      var p=MONTH.people[key];
-      return '<button class="r" data-r="'+key+'"><span class="mono">'+p.ini[k]+'</span><span class="n">'+p[k]+'</span></button>';
-    }).join('');
-    /* the key travels, the person's data does not: no name or number in the URL */
-    [].slice.call(document.querySelectorAll('#send .r')).forEach(function(b){
-      b.onclick=function(){
-        location.href=SHELL.transferUrl(b.dataset.r,'amount');
-      };
-    });
-
-    document.getElementById('nav').innerHTML=d.tabs.map(function(t,i){
-      return '<button class="tab'+(i===0?' on':'')+'"><span class="rule"></span>'+t+'</button>';
-    }).join('');
-
-    cur=null;
-    html('note',d.note);
-    commitments();
-    bindSegs();
-  }
-
-  function bindSegs(){
-    var segs=[].slice.call(document.querySelectorAll('.seg'));
-    segs.forEach(function(s){
-      s.onclick=function(){
-        var k=s.dataset.k;
-        if(cur===k){
-          cur=null;html('note',L[lang].note);
-          segs.forEach(function(x){x.classList.remove('dim')});
-          commitments();
-          return;
-        }
-        cur=k;html('note',L[lang].drill[k]);
-        segs.forEach(function(x){x.classList.toggle('dim',x!==s)});
-        if(k==='spent'){spentHistory()}else{commitments()}
-      };
-    });
-  }
-
-  SHELL.init({page:'index',current:'home',onLang:render});
-  render(lang);
-</script>
+<script src="month.js"></script>
+<script src="transfer.js"></script>
+<!-- the screens have registered themselves by now; the shell reads the address
+     and opens the one it names -->
+<script>SHELL.start()</script>
 </body>
 </html>

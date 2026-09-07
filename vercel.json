@@ -1,8 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/transfer.html", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/shell.css",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=600" }]
+    },
+    {
+      "source": "/screens.css",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=600" }]
     },
     {
@@ -11,6 +18,14 @@
     },
     {
       "source": "/model.js",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=600" }]
+    },
+    {
+      "source": "/month.js",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=600" }]
+    },
+    {
+      "source": "/transfer.js",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=600" }]
     }
   ]

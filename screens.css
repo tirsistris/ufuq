@@ -1,0 +1,277 @@
+/* The bank's own styling — everything inside the phone.
+
+   Both screens live in one document now, so they share a class vocabulary:
+   .bar, .seg, .note, .act mean the same thing on the month and on the
+   transfer. What they do not share is size — the two screens were tuned
+   separately, and the transfer sets its type a step larger.
+
+   So the phone's chrome, which is the same on both, stands once and unscoped,
+   and everything a screen tunes for itself is filed under that screen. The
+   scope is written with :where() on purpose: it adds no specificity, so inside
+   a block the rules relate to each other exactly as they did when each screen
+   had its own stylesheet. Read a scoped block as that screen's original CSS,
+   in its original order, unchanged.
+
+   The bar's rules are repeated in both blocks rather than shared, even where
+   the two screens agree on them. They have to be: the screens disagree about
+   .seg and about the order the family is written in, and a shared rule sitting
+   outside a block would be resolved against it by position rather than by
+   which screen is on show. */
+
+/* ---------- both screens ---------- */
+
+:root{--paper:#F7F5F1;--ink:#14181A;--muted:#6E7679;--avail:#0B4F55;--line:#E2DED7;--clay:#9C4A2F;--spent:#D8D5CF;--promised:#EFEBE4}
+/* --avail alternates: olive #4C5622 · oxblood #6E2438 */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;letter-spacing:0;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;letter-spacing:0;cursor:pointer}
+.num{font-family:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum" 1,"lnum" 1}
+.ltr{direction:ltr;unicode-bidi:isolate}
+
+/* the phone frame, its caption and the language switcher live in shell.css,
+   shared with both screens so they compose and scroll alike */
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:33px;border-radius:20px;background:#0b0d0e;z-index:30}
+.status{display:flex;align-items:center;justify-content:space-between;padding:15px 28px 0;flex-shrink:0;height:44px}
+.status .t{font-family:'IBM Plex Sans',sans-serif;font-size:15.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.status .ic{display:flex;align-items:center;gap:6px}
+.home{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:99px;background:rgba(20,24,26,.28);z-index:25}
+.body{flex:1;display:flex;flex-direction:column;padding:4px 20px 10px;min-height:0}
+
+/* header */
+.head{display:flex;align-items:center;justify-content:space-between;padding-top:2px}
+.dates{display:flex;align-items:center;gap:11px;margin-top:6px}
+.dates i{width:1px;height:12px;background:var(--line);display:block}
+
+/* hero */
+.hero{margin-top:12px}
+.hero-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.acct b{font-weight:500;color:rgba(20,24,26,.72);letter-spacing:.4px}
+.hero-amt{display:flex;align-items:baseline;gap:7px;margin-top:4px}
+
+/* horizon — a money bar. Widths are shares of the month's money and nothing
+   else; the seam is the edge of what has already gone, not a date. */
+.horizon{margin-top:16px;position:relative}
+.bar{display:flex;height:64px;border-radius:9px;overflow:hidden;position:relative;border:1px solid var(--line)}
+.note b{font-weight:600;color:var(--ink)}
+
+/* action */
+.act:hover{background:#20262a}
+
+/* tab bar — type only, no fills */
+.nav{flex-shrink:0;display:flex;border-top:1px solid var(--line);padding:0 14px 20px}
+
+@media (max-width:480px){
+  .status{padding-top:8px}
+}
+
+/* ---------- the month ---------- */
+
+:where(.screen-month) .h-title{font-size:21px;font-weight:600}
+:where(.screen-month) .h-mark{font-size:13.5px;font-weight:500;color:var(--muted)}
+:where(.screen-month) .dates span{font-size:13px;font-weight:500;color:rgba(20,24,26,.74)}
+:where(.screen-month) .hero-l{font-size:13.5px;color:var(--muted)}
+:where(.screen-month) .acct{font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap}
+:where(.screen-month) .hero-amt .v{font-size:38px;font-weight:600;line-height:1.02}
+:where(.screen-month) .hero-amt .c{font-size:18px;font-weight:500;color:var(--muted)}
+:where(.screen-month) .hero-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+/* no inline padding and no automatic minimum on the segment itself, so its
+   box is exactly its share: 0 SAR is 0 px, and the row never overflows and
+   shrinks the slices away from their true proportions */
+:where(.screen-month) .seg{display:flex;flex-direction:column;justify-content:space-between;padding:8px 0;min-width:0;overflow:hidden;position:relative;transition:filter .16s ease;cursor:pointer}
+:where(.screen-month) .seg .w{font-size:11.5px;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:5px;padding-inline:10px}
+:where(.screen-month) .seg .a{font-size:13px;font-weight:600;white-space:nowrap;padding-inline:10px}
+/* narrow but not blind: the label goes, the sum stays */
+:where(.screen-month) .seg.mute .w,:where(.screen-month) .seg.mute .a{display:none}
+:where(.screen-month) .seg.amt-only .w{display:none}
+:where(.screen-month) .seg.amt-only{justify-content:flex-end}
+:where(.screen-month) .s-spent{background:var(--spent);color:rgba(20,24,26,.62)}
+/* the narrowest slice by construction, and flush against the bar's rounded
+   end — a tighter inset keeps its sum readable instead of blank */
+:where(.screen-month) .s-spent .w,:where(.screen-month) .s-spent .a{padding-inline:4px}
+:where(.screen-month) .s-spent .a{font-size:12px}
+:where(.screen-month) .s-free{background:var(--avail);color:#fff}
+:where(.screen-month) .s-free .w{color:rgba(255,255,255,.82)}
+:where(.screen-month) .s-free .a{font-size:16px;font-weight:600}
+:where(.screen-month) .s-prom{background:var(--promised);color:rgba(20,24,26,.72);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
+:where(.screen-month) .seam{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);z-index:4}
+:where(.screen-month) .seg.dim{filter:saturate(.55) opacity(.5)}
+:where(.screen-month) .caret{width:9px;height:9px;flex-shrink:0;opacity:.65}
+:where(.screen-month) .scale{display:flex;justify-content:space-between;margin-top:5px}
+:where(.screen-month) .scale span{font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:var(--muted)}
+:where(.screen-month) .note{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px;line-height:1.4}
+
+/* list */
+:where(.screen-month) .sec{display:flex;align-items:baseline;justify-content:space-between;margin-top:10px;margin-bottom:1px}
+:where(.screen-month) .sec h2{font-size:15px;font-weight:600}
+:where(.screen-month) .sec .m{font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:var(--muted)}
+/* natural height, never its own scroller: the phone's body is the one place
+   that scrolls when the frame is shorter than the screen it holds */
+:where(.screen-month) .listwrap{flex:1 0 auto;min-height:0;overflow:visible}
+:where(.screen-month) .ob{display:flex;align-items:center;gap:11px;padding:6px 0;border-bottom:1px solid var(--line)}
+:where(.screen-month) .ob:last-child{border-bottom:none}
+:where(.screen-month) .hatch{width:3px;height:24px;flex-shrink:0;border-radius:2px;background:var(--promised);background-image:repeating-linear-gradient(48deg,transparent 0 3px,rgba(20,24,26,.34) 3px 4.2px)}
+:where(.screen-month) .solid{width:3px;height:24px;flex-shrink:0;border-radius:2px;background:#C9C5BE}
+:where(.screen-month) .ob-n{font-size:13.5px;font-weight:500}
+:where(.screen-month) .ob-d{font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;color:var(--muted);margin-top:1px}
+:where(.screen-month) .ob-d .soon{color:var(--clay);font-weight:600}
+:where(.screen-month) .ob-a{margin-inline-start:auto;font-size:14px;font-weight:600}
+:where(.screen-month) .ob-a.past{color:rgba(20,24,26,.55);font-weight:500}
+
+/* quick send */
+:where(.screen-month) .send{display:flex;gap:9px;margin-top:3px}
+:where(.screen-month) .r{flex:1;border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:none;text-align:start;transition:border-color .16s ease}
+:where(.screen-month) .r:hover{border-color:#C8C3B9}
+:where(.screen-month) .r .mono{width:29px;height:29px;border-radius:9px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:600;color:rgba(20,24,26,.7)}
+:where(.screen-month) .r .n{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* action */
+:where(.screen-month) .act{margin-top:12px;height:52px;flex:0 0 52px;border-radius:13px;background:var(--ink);color:#fff;border:none;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .16s ease}
+:where(.screen-month) .act:active{background:#0b0d0e}
+
+:where(.screen-month) .tab{flex:1;background:none;border:none;padding:11px 2px 0;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--muted);transition:color .14s ease}
+:where(.screen-month) .tab:hover{color:rgba(20,24,26,.7)}
+:where(.screen-month) .tab .rule{width:16px;height:2px;border-radius:2px;background:transparent}
+:where(.screen-month) .tab.on{color:var(--ink);font-weight:600}
+:where(.screen-month) .tab.on .rule{background:var(--ink)}
+
+/* ---------- the transfer ---------- */
+
+:where(.screen-transfer) .h-title{font-size:20px;font-weight:600}
+:where(.screen-transfer) .h-mark{font-size:15px;font-weight:500;color:var(--muted)}
+:where(.screen-transfer) .dates span{font-size:15px;font-weight:500;color:rgba(20,24,26,.74)}
+:where(.screen-transfer) .hero-l{font-size:15px;color:var(--muted)}
+:where(.screen-transfer) .acct{font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
+:where(.screen-transfer) .hero-amt .v{font-size:40px;font-weight:600;line-height:1.02}
+:where(.screen-transfer) .hero-amt .c{font-size:20px;font-weight:500;color:var(--muted)}
+:where(.screen-transfer) .hero-sub{font-size:15px;color:var(--muted);margin-top:4px;min-height:17px}
+/* No inline padding and no automatic minimum on the segment itself — the
+   inline padding sits on the labels instead. A segment's box is therefore
+   exactly its share of the month: 0 SAR is 0 px rather than a strip of
+   background, and because nothing can push a slice past its money the row
+   never overflows, so the seam lands on the real edge instead of near it. */
+:where(.screen-transfer) .seg{display:flex;flex-direction:column;justify-content:space-between;padding:8px 0;min-width:0;position:relative;overflow:hidden;transition:width .42s cubic-bezier(.22,.61,.36,1),background-color .42s ease}
+/* the label's line box is normalised to the sum's, so the gap between them
+   does not depend on the script's natural leading */
+:where(.screen-transfer) .seg .w{font-size:13px;font-weight:500;white-space:nowrap;line-height:16.7px;padding-inline:10px}
+:where(.screen-transfer) .seg .a{font-size:13px;font-weight:600;white-space:nowrap;padding-inline:10px}
+:where(.screen-transfer) .s-spent{background:var(--spent);color:rgba(20,24,26,.62)}
+/* the narrowest slice by construction, and flush against the bar's rounded
+   end — a tighter inset keeps its sum readable instead of blank */
+:where(.screen-transfer) .s-spent .w,:where(.screen-transfer) .s-spent .a{padding-inline:4px}
+:where(.screen-transfer) .s-wedge{background:var(--promised);color:rgba(20,24,26,.74);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
+:where(.screen-transfer) .s-wedge .w,:where(.screen-transfer) .s-wedge .a{padding-inline:6px}
+/* on Sent the slice takes Spent's material before it is absorbed */
+:where(.screen-transfer) .s-wedge.merged{background:var(--spent);background-image:none}
+:where(.screen-transfer) .s-free{background:var(--avail);color:#fff}
+:where(.screen-transfer) .s-free .w{color:rgba(255,255,255,.82)}
+:where(.screen-transfer) .s-free .a{font-size:13px;font-weight:600}
+/* narrow but not blind: the label goes, the sum stays */
+:where(.screen-transfer) .seg.mute .w,:where(.screen-transfer) .seg.mute .a{display:none}
+:where(.screen-transfer) .seg.amt-only .w{display:none}
+:where(.screen-transfer) .seg.amt-only{justify-content:flex-end}
+/* the limit inside the amount — divider material, not a state colour.
+   1px solid like a list rule; ink at half strength so it survives the hatch.
+   The seam is 2px full ink (a boundary in the month's money); this is
+   1px half ink (a boundary inside one slice). */
+:where(.screen-transfer) .limitline{position:absolute;top:0;bottom:0;width:1px;background:rgba(20,24,26,.62);z-index:3;display:none}
+:where(.screen-transfer) .limitline.on{display:block}
+:where(.screen-transfer) .s-prom{background:var(--promised);color:rgba(20,24,26,.72);background-image:repeating-linear-gradient(48deg,transparent 0 5px,rgba(20,24,26,.17) 5px 6.4px)}
+:where(.screen-transfer) .seam{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);z-index:4;transition:right .42s cubic-bezier(.22,.61,.36,1),left .42s cubic-bezier(.22,.61,.36,1)}
+/* leader + label for a slice too thin to be labelled inside */
+:where(.screen-transfer) .callrow{position:relative;height:0}
+/* Reserved only while a callout is actually possible; when the wedge is wide
+   enough to label itself the row folds away over the same duration and curve
+   as the segment widths, so the collapse reads as part of one movement. */
+:where(.screen-transfer) .callrow.reserve{height:30px}
+:where(.screen-transfer) .callrow{transition:height .42s cubic-bezier(.22,.61,.36,1)}
+:where(.screen-transfer) .call{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;gap:0;opacity:0;transition:opacity .16s ease;pointer-events:none;width:var(--cw,12px)}
+:where(.screen-transfer) .callrow.on .call{opacity:1}
+:where(.screen-transfer) .callrow:not(.on) .call{display:none}
+/* dimension annotation: hairline drop + an extent rule as wide as the wedge,
+   so the label reads as a measure of the slice, not as loose text */
+:where(.screen-transfer) .call i{width:1px;height:9px;background:rgba(20,24,26,.42);display:block}
+:where(.screen-transfer) .call u{display:block;height:1px;background:rgba(20,24,26,.42);width:100%}
+:where(.screen-transfer) .call span{position:relative}
+:where(.screen-transfer) .call span{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;margin-top:3px}
+
+:where(.screen-transfer) .scale{display:flex;justify-content:space-between;margin-top:3px}
+:where(.screen-transfer) .scale span{font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+/* the note always describes the bar, on every step, so the block is never
+   empty and the horizon never shifts between steps */
+:where(.screen-transfer) .note{font-size:15px;color:var(--muted);margin-top:5px;min-height:16px;line-height:1.4}
+
+/* zone under the horizon — one rule for all four steps:
+   content is anchored to the bottom, so every step's action lands
+   at the same distance from the nav and the air sits under the horizon.
+   Natural height, never its own scroller: the phone's body is the one place
+   that scrolls when the frame is shorter than the screen it holds. */
+:where(.screen-transfer) .zone{flex:1 0 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;margin-top:0}
+
+/* entry aids (step 0) */
+:where(.screen-transfer) .after{display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:#FCFBF9;transition:border-color .16s,background .16s}
+:where(.screen-transfer) .after.over{border-color:var(--clay);background:#FBF4F1}
+:where(.screen-transfer) .after-l{font-size:15px;color:var(--muted)}
+:where(.screen-transfer) .after-v{font-size:20px;font-weight:600;line-height:1}
+:where(.screen-transfer) .after-v .cu{font-size:13px;font-weight:500;color:var(--muted);margin-inline-start:4px}
+:where(.screen-transfer) .after.over .after-l,:where(.screen-transfer) .after.over .after-v,:where(.screen-transfer) .after.over .after-v .cu{color:var(--clay)}
+:where(.screen-transfer) .quick{display:flex;gap:7px;margin-top:6px}
+:where(.screen-transfer) .quick button{flex:1;border:1px solid var(--line);border-radius:10px;background:none;padding:7px 0;font-size:15px;font-weight:600;color:var(--ink);transition:border-color .14s,background .14s}
+:where(.screen-transfer) .quick button:hover{border-color:#C8C3B9}
+:where(.screen-transfer) .quick button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+:where(.screen-transfer) .last{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:13px;color:var(--muted)}
+:where(.screen-transfer) .last b{font-weight:600;color:var(--ink)}
+:where(.screen-transfer) .last button{background:none;border:none;font-size:13px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px;margin-inline-start:auto}
+
+/* keypad — hairline grid only */
+:where(.screen-transfer) .pad{margin-top:6px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+:where(.screen-transfer) .k{height:46px;display:flex;align-items:center;justify-content:center;background:none;border:none;border-bottom:1px solid var(--line);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;transition:background-color .12s ease}
+:where(.screen-transfer) .k:not(:nth-child(3n+1)){border-inline-start:1px solid var(--line)}
+:where(.screen-transfer) .k:nth-last-child(-n+3){border-bottom:none}
+:where(.screen-transfer) .k:active{background:rgba(20,24,26,.06)}
+:where(.screen-transfer) .k.gl{color:var(--muted)}
+
+/* rows (recipient / route) — same hairline language as the lists */
+:where(.screen-transfer) .rows{display:flex;flex-direction:column}
+:where(.screen-transfer) .row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+:where(.screen-transfer) .row:last-child{border-bottom:none}
+:where(.screen-transfer) .row-l{font-size:13px;color:var(--muted);min-width:62px}
+:where(.screen-transfer) .row-v{font-size:15px;font-weight:500;margin-inline-start:auto;text-align:end}
+:where(.screen-transfer) .row.lead .row-v{font-size:20px;font-weight:600}
+:where(.screen-transfer) .row-check{font-size:13px;color:var(--muted);margin-inline-start:auto}
+
+:where(.screen-transfer) .mark{width:3px;flex-shrink:0;border-radius:2px}
+:where(.screen-transfer) .mark.done{height:10px;background:var(--ink)}
+:where(.screen-transfer) .mark.now{height:24px;background:var(--ink)}
+:where(.screen-transfer) .mark.next{height:24px;background:var(--line)}
+:where(.screen-transfer) .step-n{font-size:15px;font-weight:500}
+:where(.screen-transfer) .step-n.done{color:var(--muted)}
+:where(.screen-transfer) .step-n.now{color:var(--ink);font-weight:600}
+:where(.screen-transfer) .step-n.next{color:rgba(110,118,121,.6)}
+
+:where(.screen-transfer) .result{font-size:20px;font-weight:600;padding:14px 0 4px}
+:where(.screen-transfer) .result-sub{font-size:15px;color:var(--muted);margin-bottom:6px;line-height:1.45}
+
+:where(.screen-transfer) .act{margin-top:8px;height:52px;flex:0 0 52px;border-radius:13px;background:var(--ink);color:#fff;border:none;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .16s ease}
+/* an amount the month cannot back does not open the next step */
+:where(.screen-transfer) .act[disabled]{background:#DCD8D1;color:#9AA0A0;cursor:not-allowed}
+:where(.screen-transfer) .act[disabled]:hover{background:#DCD8D1}
+:where(.screen-transfer) .act.ghost{background:none;color:var(--muted);border:1px solid var(--line);font-weight:500}
+:where(.screen-transfer) .act.ghost:hover{background:rgba(20,24,26,.03)}
+/* leaving the transfer: ghost chrome + the departure glyph */
+:where(.screen-transfer) .act.leave{background:none;color:var(--ink);border:1px solid var(--line);font-weight:600;margin-top:8px}
+:where(.screen-transfer) .act.leave:hover{background:rgba(20,24,26,.03)}
+:where(.screen-transfer) .act.leave svg{flex-shrink:0}
+:where(.screen-transfer) .act.bare{background:none;border:none;color:var(--muted);font-weight:500;height:40px;flex:0 0 40px;margin-top:2px;text-decoration:underline;text-underline-offset:3px}
+:where(.screen-transfer) .act.bare:hover{background:none;color:var(--ink)}
+:where(.screen-transfer) .lim-h{font-size:20px;font-weight:600;line-height:1.3;margin-bottom:5px}
+:where(.screen-transfer) .lim-p{font-size:15px;color:var(--muted);line-height:1.5;margin-bottom:4px}
+/* the zone anchors content to the bottom for every step; this absorbs the
+   slack after the explanation so the heading stays at the top on Limit */
+:where(.screen-transfer) .lim-rows{margin-bottom:auto}
+:where(.screen-transfer) .lim-p b{font-weight:600;color:var(--ink)}
+:where(.screen-transfer) .sending{margin-top:12px;height:52px;flex:0 0 52px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;color:var(--muted)}
+
+:where(.screen-transfer) .tab{flex:1;background:none;border:none;padding:11px 2px 0;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--muted)}
+:where(.screen-transfer) .tab .rule{width:16px;height:2px;border-radius:2px;background:transparent}
+:where(.screen-transfer) .tab.on{color:var(--ink);font-weight:600}
+:where(.screen-transfer) .tab.on .rule{background:var(--ink)}
