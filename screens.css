@@ -248,14 +248,32 @@ button{font-family:inherit;letter-spacing:0;cursor:pointer}
 :where(.screen-transfer) .step-n.now{color:var(--ink);font-weight:600}
 :where(.screen-transfer) .step-n.next{color:rgba(110,118,121,.6)}
 
-:where(.screen-transfer) .result{font-size:20px;font-weight:600;padding:14px 0 4px}
-:where(.screen-transfer) .result-sub{font-size:15px;color:var(--muted);margin-bottom:6px;line-height:1.45}
+/* Sent, and only Sent.
+
+   The transfer is what the screen is about, so it is said in the hero, at the
+   size the hero already gives whatever a step is about. The label carries the
+   fact and the hero's own number carries the amount, so the two read as one
+   line; the recipient follows underneath, where the recipient always is.
+
+   Below the bar sits the evidence: the route, then the balance the month is
+   left with — visible, but in the same quiet row vocabulary the other steps use
+   for their data, not competing with the result.
+
+   The slack is absorbed on the same principle as Limit, by the block above the
+   action rather than by moving the action: the evidence stays under the bar it
+   belongs to, and the button still lands where every step's button lands. */
+:where(.screen-transfer) .hero-l.said{font-size:20px;font-weight:600;color:var(--ink)}
+:where(.screen-transfer) .sent-left{margin-top:9px;margin-bottom:auto}
 
 :where(.screen-transfer) .act{margin-top:8px;height:52px;flex:0 0 52px;border-radius:13px;background:var(--ink);color:#fff;border:none;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .16s ease}
 /* an amount the month cannot back does not open the next step */
 :where(.screen-transfer) .act[disabled]{background:#DCD8D1;color:#9AA0A0;cursor:not-allowed}
 :where(.screen-transfer) .act[disabled]:hover{background:#DCD8D1}
-:where(.screen-transfer) .act.ghost{background:none;color:var(--muted);border:1px solid var(--line);font-weight:500}
+/* Leaving a finished transfer is a real action, and the only button on its
+   screen. Outline chrome keeps it quieter than a step's primary button, but the
+   type is ink at full weight, so it can never be read as the disabled state —
+   which is the one thing on this screen that greys its label out. */
+:where(.screen-transfer) .act.ghost{background:none;color:var(--ink);border:1px solid #C8C3B9;font-weight:600}
 :where(.screen-transfer) .act.ghost:hover{background:rgba(20,24,26,.03)}
 /* leaving the transfer: ghost chrome + the departure glyph */
 :where(.screen-transfer) .act.leave{background:none;color:var(--ink);border:1px solid var(--line);font-weight:600;margin-top:8px}

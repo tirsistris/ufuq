@@ -27,8 +27,16 @@ var SHELL=(function(){
     {k:'failed',  ru:'Ошибка',        at:'transfer',step:5,amount:'500'}
   ];
 
-  /* the tab title each screen carried when it was its own page */
-  var TITLE={month:'أفق — الشهر',transfer:'أفق — تحويل'};
+  /* The tab names the screen that is open, in the language the phone is
+     speaking — the shell's own Russian stays outside the frame, and outside
+     this too. Every word here is already in the prototype: the brand and the
+     month from the screens' own dictionaries, the transfer from the title the
+     transfer page carried when it was one. */
+  var TITLE={
+    month:   {ar:'أفق — الشهر', en:'Ufuq — Month'},
+    transfer:{ar:'أفق — تحويل', en:'Ufuq — Transfer'}
+  };
+  function paintTitle(){document.title=TITLE[byKey(cur).at][lang]}
 
   var mods={},active=null,
       lang='ar',rec='noura',cur='home',
@@ -104,7 +112,7 @@ var SHELL=(function(){
       b.onclick=function(){
         if(b.dataset.l===lang)return;
         lang=b.dataset.l;
-        paintLang();
+        paintLang();paintTitle();
         /* the language is a property of the screen you are on, not a move to
            another one: the address is corrected in place, so Back still goes
            where it went before, and a reload comes back to the same state */
@@ -176,8 +184,7 @@ var SHELL=(function(){
     active=mod;
     mod.root.hidden=false;
     cur=s.k;
-    document.title=TITLE[s.at];
-    paintNav();
+    paintTitle();paintNav();
 
     /* A screen arrives at the size and shape it was left in. Its transitions
        describe changes made while it is being watched, so they are held shut
@@ -233,8 +240,7 @@ var SHELL=(function(){
        instead of pushing, so Back cannot land on a state that immediately
        moves on again. */
     mark:function(k,opts){
-      cur=k;paintNav();
-      document.title=TITLE[byKey(k).at];
+      cur=k;paintTitle();paintNav();
       if(opts&&opts.replace)history.replaceState(null,'',href(k));
       else history.pushState(null,'',href(k));
     },

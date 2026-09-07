@@ -47,7 +47,6 @@
       dir:'rtl',title:'الشهر',mark:'أفق',
       acct:'جاري <b class="ltr">'+MONTH.account+'</b>',
       availL:'المتاح الآن',amountL:'المبلغ',
-      monthSub:['من ',' لهذا الشهر'],
       toSub:'إلى ',
       s:['مصروف','متاح','موعود'],wedge:'المبلغ',
       notes:{
@@ -65,7 +64,7 @@
       name:REC.ar,
       route:['خُصم من الحساب','شبكة سريع','وصل إلى '+REC.ar],
       sendBtn:'إرسال ',sending:'جارٍ الإرسال',
-      resultW:'أُرسل ',resultSub:'وصل إلى '+REC.ar+' · <span class="num ltr">'+PHONE+'</span>',
+      resultW:'أُرسل ',
       back:'العودة إلى الشهر',
       contBtn:'متابعة',nowW:'الآن',
       limH:'المبلغ أعلى من حد التحويل السريع',
@@ -81,7 +80,6 @@
       dir:'ltr',title:'Month',mark:'Ufuq',
       acct:'Current <b class="ltr">'+MONTH.account+'</b>',
       availL:'Available now',amountL:'Amount',
-      monthSub:['of ',' for this month'],
       toSub:'to ',
       s:['Spent','Available','Promised'],wedge:'Amount',
       notes:{
@@ -99,7 +97,7 @@
       name:REC.en,
       route:['Debited from account','sarie network','Delivered to '+REC.en],
       sendBtn:'Send ',sending:'Sending',
-      resultW:'Sent ',resultSub:'Delivered to '+REC.en+' · <span class="num ltr">'+PHONE+'</span>',
+      resultW:'Sent ',
       back:'Back to Month',
       contBtn:'Continue',nowW:'now',
       limH:'This is above the quick transfer limit',
@@ -248,14 +246,18 @@
       syncCall();trackCall();
     }
 
-    // hero: the typed amount IS the hero number until it is sent
-    if(sent){
-      set('t-hl',d.availL);set('t-hv',grp(FREE-w));
-      html('t-hs',d.monthSub[0]+n(money(MONTH.total))+d.monthSub[1]);
-    }else{
-      set('t-hl',d.amountL);set('t-hv',grp(a));
-      html('t-hs',d.toSub+d.name+' · '+n(d.tel));
-    }
+    /* The hero is where the screen says what it is about, so on Sent it says
+       the transfer happened. The number does not change hands at the end — the
+       amount that was typed is the amount that was sent, and it stays the hero
+       while its label turns from "المبلغ / Amount" into "أُرسل / Sent". The
+       recipient goes on reading straight out of it, one line below.
+
+       The balance the month is left with is not dropped, only demoted: it is a
+       row under the bar now, with the rest of the evidence. */
+    set('t-hl',sent?d.resultW.trim():d.amountL);
+    el('t-hl').classList.toggle('said',sent);
+    set('t-hv',grp(a));
+    html('t-hs',d.toSub+d.name+' · '+n(d.tel));
     /* an unbackable amount is explained wherever the step would otherwise
        describe a slice that is not on the bar */
     html('note',(over&&!sent&&!failed)?d.notes.over
@@ -316,11 +318,18 @@
       }).join('')+'</div>'+
       '<div class="sending">'+d.sending+'</div>';
     }else{
-      h='<div class="result">'+d.resultW+'<span class="num ltr">'+money(a)+'</span></div>'+
-        '<div class="result-sub">'+d.resultSub+'</div>'+
-        '<div class="rows">'+d.route.map(function(r){
+      /* The result is stated in the hero; what belongs here is the evidence for
+         it — how the money went, and what the month has left afterwards. Both
+         sit directly under the bar rather than at the far end of the screen:
+         the slack is taken by the block above the action, the way Limit takes
+         it, so the action still lands where every step's action lands. */
+      h='<div class="rows">'+d.route.map(function(r){
           return '<div class="row"><span class="mark done"></span><span class="step-n done">'+r+'</span></div>';
         }).join('')+'</div>'+
+        '<div class="rows sent-left">'+
+          '<div class="row"><span class="row-l">'+d.availL+'</span>'+
+          '<span class="row-v num ltr">'+money(FREE-drawn())+'</span></div>'+
+        '</div>'+
         '<button class="act ghost" data-el="go">'+d.back+'</button>';
     }
     z.innerHTML=h;
